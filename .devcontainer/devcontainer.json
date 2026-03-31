@@ -1,6 +1,7 @@
 {
 	"build": {
-		"dockerfile": "../docker/dev.dockerfile"
+		"dockerfile": "../docker/dev.dockerfile",
+		"context": ".."
 	},
 	"privileged": true,
 	"customizations": {
@@ -23,5 +24,6 @@
 			}
 		}
 	},
-	"workspaceFolder": "/usr/app/src"
+	"workspaceFolder": "/usr/app/src",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/usr/app/src,type=bind"
 }

@@ -7,7 +7,7 @@ using namespace nanoipc;
 
 using ApiRequest = std::string;
 using ApiResponse = int;
-using TestNanoIpc = NanoIpc<ApiRequest, ApiResponse, 10UL>;
+using TestNanoIpc = NanoIpcServer<ApiRequest, ApiResponse, 10UL>;
 
 TEST(ut_nanoipc, sanity) {
 	// GIVEN

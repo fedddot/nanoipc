@@ -14,6 +14,8 @@ target_link_libraries(
 	nanoipc_tests
 	PRIVATE
 	nanoipc
+	gtest
+	gtest_main
 )
 
 add_test(NAME nanoipc_tests COMMAND nanoipc_tests)

@@ -24,6 +24,6 @@ target_sources(nanoipc INTERFACE ${CMAKE_CURRENT_LIST_DIR}/nanoipc.cpp)
 target_include_directories(nanoipc INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(nanoipc INTERFACE nanocobs_lib)
 
-if(BUILD_TESTS)
+if(NOT DEFINED NO_TESTS)
     add_subdirectory(tests)
 endif()

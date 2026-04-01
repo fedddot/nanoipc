@@ -11,7 +11,7 @@
 
 using namespace nanoipc;
 
-std::optional<std::size_t> nanoipc::find_delimiter(const ReadBuffer& read_buffer) {
+static std::optional<std::size_t> find_delimiter(const ReadBuffer& read_buffer) {
     for (auto i = std::size_t(0); i < read_buffer.size(); ++i) {
         if (read_buffer.get(i) == COBS_FRAME_DELIMITER) {
             return i;
@@ -33,18 +33,34 @@ std::optional<std::vector<std::uint8_t>> nanoipc::read_encoded_frame(ReadBuffer 
     return std::make_optional(encoded_frame_data);
 }
 
-std::optional<std::vector<std::uint8_t>> nanoipc::read_frame(ReadBuffer *read_buffer) {
-    const auto encoded_frame_data = read_encoded_frame(read_buffer);
-    if (!encoded_frame_data.has_value()) {
-        return std::nullopt;
+std::vector<std::uint8_t> nanoipc::encode_frame(const std::uint8_t *frame_data, const std::size_t frame_data_size) {
+    std::vector<std::uint8_t> encoded_frame_data;
+    std::size_t receiver_data_size = frame_data_size;
+    std::size_t encoded_frame_data_size = 0;
+
+    while (true) {
+        encoded_frame_data.reserve(receiver_data_size);
+        const auto encode_result = cobs_encode(frame_data, frame_data_size, encoded_frame_data.data(), encoded_frame_data.capacity(), &encoded_frame_data_size);
+        if (encode_result == COBS_RET_SUCCESS) {
+            break;
+        } else if (encode_result == COBS_RET_ERR_EXHAUSTED) {
+            receiver_data_size *= 2;
+        } else {
+            throw std::runtime_error("failed to encode COBS frame");
+        }
     }
+    encoded_frame_data.resize(encoded_frame_data_size);
+    return encoded_frame_data;
+}
+
+std::vector<std::uint8_t> nanoipc::decode_frame(const std::uint8_t *frame_data, const std::size_t frame_data_size) {
     std::vector<std::uint8_t> decoded_frame_data;
+    decoded_frame_data.reserve(frame_data_size);
     std::size_t decoded_frame_data_size = 0;
-    decoded_frame_data.reserve(encoded_frame_data->size());
-    const auto decode_result = cobs_decode(encoded_frame_data->data(), encoded_frame_data->size(), decoded_frame_data.data(), decoded_frame_data.capacity(), &decoded_frame_data_size);
+    const auto decode_result = cobs_decode(frame_data, frame_data_size, decoded_frame_data.data(), decoded_frame_data.capacity(), &decoded_frame_data_size);
     if (decode_result != COBS_RET_SUCCESS) {
         throw std::runtime_error("failed to decode COBS frame");
     }
     decoded_frame_data.resize(decoded_frame_data_size);
-    return std::make_optional(decoded_frame_data);
+    return decoded_frame_data;
 }

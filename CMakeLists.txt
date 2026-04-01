@@ -24,9 +24,12 @@ target_include_directories(nanoipc_utils INTERFACE ${CMAKE_CURRENT_LIST_DIR} ${n
 target_link_libraries(nanoipc_utils INTERFACE nanoipc_read_buffer)
 
 add_library(nanoipc_server INTERFACE)
-target_sources(nanoipc_server INTERFACE ${CMAKE_CURRENT_LIST_DIR}/nanoipc_server.cpp)
 target_include_directories(nanoipc_server INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(nanoipc_server INTERFACE nanoipc_utils nanoipc_read_buffer)
+
+add_library(nanoipc_server_lib STATIC)
+target_sources(nanoipc_server_lib PRIVATE ${CMAKE_CURRENT_LIST_DIR}/nanoipc_server.cpp)
+target_link_libraries(nanoipc_server_lib PUBLIC nanoipc_server)
 
 option(BUILD_TESTS "Build the project's test suite" ON)
 if(BUILD_TESTS)

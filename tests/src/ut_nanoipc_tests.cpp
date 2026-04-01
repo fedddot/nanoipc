@@ -4,6 +4,8 @@
 
 #include "gtest/gtest.h"
 
+#include "cobs.h"
+
 #include "nanoipc_server.hpp"
 
 using namespace nanoipc;
@@ -42,6 +44,8 @@ private:
 	std::vector<std::uint8_t> m_data;
 };
 
+static void write_request_to_buffer(VectorBuffer *buffer, const ApiRequest& request);
+
 TEST(ut_nanoipc_server, sanity) {
 	// GIVEN
 	VectorBuffer read_buffer;
@@ -71,4 +75,17 @@ std::size_t serialize_response(const ApiResponse& response, std::uint8_t *dest_b
 		dest_buff[i] = (response >> (i * CHAR_BIT)) & 0xFF;
 	}
 	return sizeof(ApiResponse);
+}
+
+void write_request_to_buffer(VectorBuffer *buffer, const ApiRequest& request) {
+	enum { BUFFER_CAPACITY = 256 };
+	if (request.size() >= BUFFER_CAPACITY) {
+		throw std::invalid_argument("request too large to encode in buffer");
+	}
+	std::uint8_t temp_buffer[BUFFER_CAPACITY];
+	std::size_t encoded_size = 0;
+	for (auto i = std::size_t(0); i < request.size(); ++i) {
+		temp_buffer[i] = static_cast<std::uint8_t>(request[i]);
+	}
+	
 }

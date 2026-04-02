@@ -1,0 +1,2 @@
+- Look at NanoIpcServer class for reference.
+- Implement class NanoIpcClient sending to the NanoIpcServer IpcRequest and receiving IpcResponse. The request should be serialized with the function provided in the ctor, then the serial data should be encoded using nanoipc_utils. Then the response data should be decoded and parsed and returned to the caller. Use ReadBuffer for reading the response data.

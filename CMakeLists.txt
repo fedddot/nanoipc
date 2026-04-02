@@ -27,6 +27,10 @@ add_library(nanoipc_server INTERFACE)
 target_include_directories(nanoipc_server INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(nanoipc_server INTERFACE nanoipc_utils nanoipc_read_buffer)
 
+add_library(nanoipc_client INTERFACE)
+target_include_directories(nanoipc_client INTERFACE ${CMAKE_CURRENT_LIST_DIR})
+target_link_libraries(nanoipc_client INTERFACE nanoipc_utils nanoipc_read_buffer)
+
 option(BUILD_TESTS "Build the project's test suite" ON)
 if(BUILD_TESTS)
   enable_testing()

@@ -14,6 +14,7 @@ target_link_libraries(
 	nanoipc_tests
 	PRIVATE
 	nanoipc_server
+	nanoipc_client
 	nanoipc_utils
 	gtest
 	gtest_main

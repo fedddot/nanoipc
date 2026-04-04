@@ -6,13 +6,9 @@
 #include "nanopb_serializer.hpp"
 #include "pb_encode.h"
 #include "test.pb.h"
+#include "test_message.hpp"
 
 using namespace nanoipc;
-
-struct TestMessage {
-    int int_value;
-    std::string string_value;
-};
 
 using TestSerializer = NanoPbSerializer<TestMessage, test_api_TestMessage>;
 

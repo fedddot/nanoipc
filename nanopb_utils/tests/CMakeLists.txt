@@ -3,7 +3,7 @@ set(TEST_GENERATED_API_DIR ${CMAKE_CURRENT_BINARY_DIR})
 add_custom_command(
 	OUTPUT ${TEST_GENERATED_API_DIR}/test.pb.c ${TEST_GENERATED_API_DIR}/test.pb.h
 	DEPENDS ${CMAKE_CURRENT_LIST_DIR}/src/test.proto
-	COMMAND python ${nanopb_SOURCE_DIR}/generator/nanopb_generator.py -I ${CMAKE_CURRENT_LIST_DIR}/src -D ${TEST_GENERATED_API_DIR} test.proto
+	COMMAND ${Python_EXECUTABLE} ${nanopb_SOURCE_DIR}/generator/nanopb_generator.py -I ${CMAKE_CURRENT_LIST_DIR}/src -D ${TEST_GENERATED_API_DIR} test.proto
 )
 
 add_custom_target(
@@ -19,13 +19,14 @@ target_include_directories(test_api INTERFACE ${TEST_GENERATED_API_DIR})
 add_executable(
   nanopb_utils_tests
   ${CMAKE_CURRENT_LIST_DIR}/src/ut_nanopb_serializer.cpp
-  ${PROTO_SRCS}
+  ${CMAKE_CURRENT_LIST_DIR}/src/ut_nanopb_parser.cpp
 )
 
 target_link_libraries(
   nanopb_utils_tests
   PRIVATE
   nanopb_serializer
+  nanopb_parser
   test_api
   gtest
   gtest_main

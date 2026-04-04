@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "build/_deps/nanopb-src/pb.h"
+#include "pb.h"
 
 namespace nanoipc {
 	template <typename Message>

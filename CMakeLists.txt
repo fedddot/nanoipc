@@ -8,6 +8,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
 
+option(BUILD_TESTS "Build the project's test suite" ON)
+if(BUILD_TESTS)
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG		 v1.17.0
+  )
+  FetchContent_MakeAvailable(googletest)
+  enable_testing()
+endif()
+
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/nanoipc_utils)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/nanopb_utils)
 
@@ -22,8 +33,6 @@ add_library(nanoipc_writer INTERFACE)
 target_include_directories(nanoipc_writer INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(nanoipc_writer INTERFACE nanoipc_utils)
 
-option(BUILD_TESTS "Build the project's test suite" ON)
 if(BUILD_TESTS)
-  enable_testing()
   add_subdirectory(tests)
 endif()

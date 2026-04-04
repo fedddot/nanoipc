@@ -12,3 +12,7 @@ target_include_directories(nanopb_encode INTERFACE ${nanopb_SOURCE_DIR})
 add_library(nanopb_serializer INTERFACE)
 target_include_directories(nanopb_serializer INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(nanopb_serializer INTERFACE nanopb_encode)
+
+if(BUILD_TESTS)
+  add_subdirectory(tests)
+endif()

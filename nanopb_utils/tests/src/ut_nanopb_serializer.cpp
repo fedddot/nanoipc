@@ -4,14 +4,33 @@
 #include "gtest/gtest.h"
 
 #include "nanopb_serializer.hpp"
+#include "pb_encode.h"
 #include "test.pb.h"
 
 using namespace nanoipc;
 
-using TestSerializer = NanoPbSerializer<TestMessage>;
+struct TestMessage {
+    int int_value;
+    std::string string_value;
+};
 
-static pb_msgdesc_t* get_test_message_descriptor(const TestMessage&) {
-	return const_cast<pb_msgdesc_t*>(&TestMessage_msg);
+using TestSerializer = NanoPbSerializer<TestMessage, test_api_TestMessage>;
+
+static bool encode_string(pb_ostream_t *stream, const pb_field_t *field, void *const *arg) {
+	if (!arg) {
+		throw std::runtime_error("encode_string called with null arg");
+	}
+	const auto str = static_cast<const std::string *>(*arg);
+	if (!pb_encode_tag_for_field(stream, field)) {
+		return false;
+	}
+	return pb_encode_string(stream, (const pb_byte_t *)(str->c_str()), str->size());
+}
+static void get_test_message_descriptor(test_api_TestMessage* pb_message, const TestMessage& msg) {
+	*pb_message = test_api_TestMessage_init_default;
+	pb_message->int_value = msg.int_value;
+	pb_message->string_value.funcs.encode = encode_string;
+	pb_message->string_value.arg = const_cast<std::string *>(&msg.string_value);
 }
 
 TEST(ut_nanopb_serializer, invalid_args) {

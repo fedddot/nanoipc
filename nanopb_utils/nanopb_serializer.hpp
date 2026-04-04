@@ -6,13 +6,11 @@
 #include <stdexcept>
 #include <vector>
 
-#include "pb.h"
-
 namespace nanoipc {
-	template <typename Message>
+	template <typename Message, typename PbMessage>
 	class NanoPbSerializer {
 	public:
-		using MessageToPbTransformer = std::function<pb_msgdesc_t *(const Message& message)>;
+		using MessageToPbTransformer = std::function<void(PbMessage *pb_message, const Message& message)>;
 
 		NanoPbSerializer(
 			const MessageToPbTransformer& message_transformer

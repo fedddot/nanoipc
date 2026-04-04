@@ -23,14 +23,6 @@ target_sources(nanoipc_utils INTERFACE ${CMAKE_CURRENT_LIST_DIR}/nanoipc_utils.c
 target_include_directories(nanoipc_utils INTERFACE ${CMAKE_CURRENT_LIST_DIR} ${nanocobs_SOURCE_DIR})
 target_link_libraries(nanoipc_utils INTERFACE nanoipc_read_buffer)
 
-add_library(nanoipc_server INTERFACE)
-target_include_directories(nanoipc_server INTERFACE ${CMAKE_CURRENT_LIST_DIR})
-target_link_libraries(nanoipc_server INTERFACE nanoipc_utils nanoipc_read_buffer)
-
-add_library(nanoipc_client INTERFACE)
-target_include_directories(nanoipc_client INTERFACE ${CMAKE_CURRENT_LIST_DIR})
-target_link_libraries(nanoipc_client INTERFACE nanoipc_utils nanoipc_read_buffer)
-
 add_library(nanoipc_reader INTERFACE)
 target_include_directories(nanoipc_reader INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(nanoipc_reader INTERFACE nanoipc_utils nanoipc_read_buffer)

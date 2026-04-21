@@ -9,77 +9,95 @@ nanoipc/
 ├── nanoipc_read_buffer.hpp   # ReadBuffer interface
 ├── nanoipc_reader.hpp        # NanoIpcReader – deserialises incoming messages
 ├── nanoipc_writer.hpp        # NanoIpcWriter – serialises outgoing messages
-├── nanoipc_utils/            # COBS encode/decode helpers
+├── nanoipc_utils/            # COBS encode/decode helpers + NanoipcRingBuffer
 ├── nanopb_utils/             # nanopb parser and serialiser adapters
 ├── tests/                    # Google Test suite (host build)
 └── example/
-    ├── proto/                # example.proto definition
-    └── example_server/       # BluePill firmware (see below)
+    ├── api/                  # Shared API: example.proto, typed reader/writer classes
+    ├── example_client/       # Host-side client (Linux/macOS, reads/writes a serial fd)
+    └── example_server/       # Raspberry Pi Pico firmware (see below)
 ```
 
-## Example server (STM32F103C8T6 – Blue Pill)
+## Example server (Raspberry Pi Pico – RP2040)
 
-The example server runs on the [Blue Pill](https://stm32-base.org/boards/STM32F103C8T6-Blue-Pill.html) development board (STM32F103C8T6, Cortex-M3, 64 KiB flash, 20 KiB RAM).
+The example server runs on the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/) (RP2040, dual-core Cortex-M0+, 2 MiB flash, 264 KiB RAM).
 
-It receives `ExampleRequest` protobuf messages over **USART1** (PA9 TX / PA10 RX at 9600 baud), processes them, and responds with `ExampleResponse` messages over the same port.
-
-The system clock is configured to **72 MHz** via the on-board 8 MHz crystal (HSE) and the internal PLL (×9) in `startup_stm32f103.c`.
+It receives `ExampleRequest` protobuf messages over **UART0** (GP0 TX / GP1 RX at 9600 baud), processes them, and responds with `ExampleResponse` messages over the same port.
 
 ### Prerequisites
 
 | Tool | Install (Debian / Ubuntu) |
 |------|--------------------------|
-| ARM GCC cross-compiler | `sudo apt install gcc-arm-none-eabi binutils-arm-none-eabi` |
 | CMake ≥ 3.16 | `sudo apt install cmake` |
+| ARM GCC cross-compiler | `sudo apt install gcc-arm-none-eabi binutils-arm-none-eabi` |
 | Python 3 (nanopb generator) | `sudo apt install python3` |
 | Git | `sudo apt install git` |
 
-A flasher such as [st-flash](https://github.com/stlink-org/stlink) or [OpenOCD](https://openocd.org/) is needed to write the firmware to the board.
+The Pico SDK is fetched automatically by CMake at configure time (`PICO_SDK_FETCH_FROM_GIT ON`). No separate SDK installation is required.
 
 ### Build
 
 ```bash
 cd example/example_server
 
-cmake -B build \
-      -DCMAKE_TOOLCHAIN_FILE=stm32-bluepill-toolchain.cmake \
-      -DCMAKE_BUILD_TYPE=MinSizeRel
+cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel
 
 cmake --build build
 ```
 
-The build produces three artefacts inside `build/`:
+The build produces the following artefacts inside `build/`:
 
 | File | Description |
 |------|-------------|
 | `example_server.elf` | ELF image (use with a debugger / OpenOCD) |
-| `example_server.hex` | Intel HEX – suitable for `st-flash` / `stm32flash` |
-| `example_server.bin` | Raw binary – suitable for `st-flash write` |
-| `example_server.map` | Linker map file |
+| `example_server.uf2` | UF2 image – drag-and-drop onto Pico in BOOTSEL mode |
+| `example_server.bin` | Raw binary |
+| `example_server.hex` | Intel HEX |
 
 ### Flash
 
-**st-link (ST-LINK/V2 dongle):**
+**UF2 (easiest):**
+Hold the BOOTSEL button while plugging in the Pico. It mounts as a USB mass-storage device; copy the UF2 file onto it:
 ```bash
-st-flash write build/example_server.bin 0x08000000
+cp build/example_server.uf2 /media/$USER/RPI-RP2/
 ```
 
-**OpenOCD:**
+**OpenOCD (SWD, via Picoprobe or another Pico running the debugprobe firmware):**
 ```bash
-openocd -f interface/stlink.cfg \
-        -f target/stm32f1x.cfg \
+openocd -f interface/cmsis-dap.cfg \
+        -f target/rp2040.cfg \
         -c "program build/example_server.elf verify reset exit"
 ```
 
-### USART1 pin-out
+### UART0 pin-out
 
-| Blue Pill pin | Signal | Connect to |
-|---------------|--------|------------|
-| PA9  | TX | USB-UART adapter RX |
-| PA10 | RX | USB-UART adapter TX |
-| GND  | GND | USB-UART adapter GND |
+| Pico pin | GPIO | Signal | Connect to |
+|----------|------|--------|------------|
+| Pin 1 | GP0 | TX | USB-UART adapter RX |
+| Pin 2 | GP1 | RX | USB-UART adapter TX |
+| Pin 3 | GND | GND | USB-UART adapter GND |
 
 Settings: **9600 baud, 8N1**.
+
+## Example client (host)
+
+The example client runs on a Linux/macOS host. It opens a serial port, sends `ExampleRequest` messages, and prints the received `ExampleResponse` messages.
+
+### Build
+
+```bash
+cd example/example_client
+
+cmake -B build
+
+cmake --build build
+```
+
+### Run
+
+```bash
+build/example_client /dev/ttyUSB0
+```
 
 ## Running the tests (host)
 
@@ -88,4 +106,3 @@ cmake -B build-tests
 cmake --build build-tests
 ctest --test-dir build-tests
 ```
-

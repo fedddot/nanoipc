@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <deque>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -27,69 +26,11 @@
 
 // NanoIPC
 #include "nanoipc_ring_buffer.hpp"
-#include "nanoipc_reader.hpp"
-#include "nanoipc_writer.hpp"
-#include "nanopb_parser.hpp"
-#include "nanopb_serializer.hpp"
 
-// Generated protobuf stubs
-#include "example.pb.h"
-
-// =============================================================================
-// Domain types
-// =============================================================================
-
+// API
 #include "example_api.hpp"
 #include "example_request_writer.hpp"
 #include "example_response_reader.hpp"
-
-
-// =============================================================================
-// Serial ReadBuffer
-// =============================================================================
-
-/// @brief `nanoipc::ReadBuffer` backed by a POSIX file descriptor.
-///
-/// Incoming bytes are buffered internally. `size()` drains any bytes currently
-/// available in the OS receive buffer so the NanoIpcReader can be polled
-/// without blocking.
-class SerialReadBuffer : public nanoipc::ReadBuffer {
-public:
-    explicit SerialReadBuffer(int fd) : m_fd(fd) {}
-
-    std::uint8_t pop_front() override {
-        drain();
-        if (m_buf.empty()) {
-            return 0;
-        }
-        const std::uint8_t byte = m_buf.front();
-        m_buf.pop_front();
-        return byte;
-    }
-
-    std::size_t size() const override {
-        drain();
-        return m_buf.size();
-    }
-
-    std::uint8_t get(const std::size_t index) const override {
-        return m_buf[index];
-    }
-
-private:
-    void drain() const {
-        std::uint8_t tmp[64];
-        const ssize_t n = ::read(m_fd, tmp, sizeof(tmp));
-        if (n > 0) {
-            for (ssize_t i = 0; i < n; ++i) {
-                m_buf.push_back(tmp[i]);
-            }
-        }
-    }
-
-    int m_fd;
-    mutable std::deque<std::uint8_t> m_buf;
-};
 
 // =============================================================================
 // Serial port helpers
@@ -143,12 +84,6 @@ static int open_serial(const std::string& port, const uint32_t baud) {
 }
 
 // =============================================================================
-// Protobuf transformers
-// =============================================================================
-
-
-
-// =============================================================================
 // CLI parsing
 // =============================================================================
 
@@ -156,7 +91,7 @@ struct Config {
     std::string port  = "/dev/ttyUSB0";
     uint32_t    baud  = 9600;
     int32_t     value = 0;
-    Action      action = Action::ADD;
+    api::Action action = api::Action::ADD;
 };
 
 static void usage(const char* prog) {
@@ -177,9 +112,9 @@ static Config parse_args(int argc, char* argv[]) {
         } else if ((arg == "--action") && i + 1 < argc) {
             const std::string act = argv[++i];
             if (act == "add") {
-                cfg.action = Action::ADD;
+                cfg.action = api::Action::ADD;
             } else if (act == "subtract") {
-                cfg.action = Action::SUBTRACT;
+                cfg.action = api::Action::SUBTRACT;
             } else {
                 throw std::runtime_error("unknown action '" + act + "' (use add or subtract)");
             }
@@ -208,12 +143,9 @@ int main(int argc, char* argv[]) {
     try {
         fd = open_serial(cfg.port, cfg.baud);
 
-        SerialReadBuffer read_buffer(fd);
+        nanoipc::NanoipcRingBuffer<256> read_buffer;
 
-        // Writer: serialises outgoing ExampleRequest messages
-        api::ExampleRequestWriter writer([
-            fd
-        ](const std::uint8_t* data, const std::size_t size) {
+        api::ExampleRequestWriter writer([fd](const std::uint8_t* data, const std::size_t size) {
             std::size_t written = 0;
             while (written < size) {
                 const ssize_t n = ::write(fd, data + written, size - written);
@@ -224,15 +156,23 @@ int main(int argc, char* argv[]) {
             }
         });
 
-        // Reader: parses incoming ExampleResponse messages
         api::ExampleResponseReader reader(&read_buffer);
 
         // Send the request
-        writer.write(ExampleRequest{ cfg.value, cfg.action });
+        writer.write(api::ExampleRequest{ cfg.value, cfg.action });
 
         // Poll for a response (timeout: 5 s)
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
         while (std::chrono::steady_clock::now() < deadline) {
+            // Drain any available bytes from the serial port into the ring buffer
+            std::uint8_t tmp[64];
+            const ssize_t n = ::read(fd, tmp, sizeof(tmp));
+            if (n > 0) {
+                for (ssize_t i = 0; i < n; ++i) {
+                    read_buffer.push_back(tmp[i]);
+                }
+            }
+
             const auto response = reader.read();
             if (response.has_value()) {
                 std::cout << response->result << "\n";

@@ -11,13 +11,14 @@ add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../.. ${CMAKE_CURRENT_BINARY_DIR}/nan
 
 find_package(Python REQUIRED)
 
-set(PROTO_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
-set(PROTO_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set(PROTO_SRC_DIR ${CMAKE_CURRENT_LIST_DIR})
+set(PROTO_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
+file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
 
 add_custom_command(
     OUTPUT ${PROTO_GEN_DIR}/example.pb.c ${PROTO_GEN_DIR}/example.pb.h
     DEPENDS ${PROTO_SRC_DIR}/example.proto
-    COMMAND ${Python_EXECUTABLE} ${nanopb_SOURCE_DIR}/generator/nanopb_generator.py -I ${PROTO_SRC_DIR} -D ${PROTO_GEN_DIR} example.proto
+    COMMAND ${Python_EXECUTABLE} ${nanopb_SOURCE_DIR}/generator/nanopb_generator.py -I ${PROTO_SRC_DIR} -D ${PROTO_GEN_DIR} ${PROTO_SRC_DIR}/example.proto
     COMMENT "Generating nanopb stubs from example.proto"
 )
 

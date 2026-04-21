@@ -10,14 +10,31 @@
 #include "pb_decode.h"
 
 namespace nanoipc {
-	template <typename Message, typename PbMessage, std::size_t MAX_MSG_SIZE = 0xFF>
+	/// @brief Parser that decodes nanopb messages into user `Message` objects.
+	///
+	/// `NanoPbParser` wraps nanopb decode functionality and a transformer that
+	/// converts the generated `PbMessage` into the user-facing `Message` type.
+	///
+	/// Template parameters:
+	/// - `Message`: the resulting user type returned by the parser
+	/// - `PbMessage`: the nanopb-generated struct type used for decoding
+	template <typename Message, typename PbMessage>
 	class NanoPbParser {
 	public:
+		/// @brief Function type that transforms a decoded `PbMessage` into `Message`.
 		using PbMessageToMessageTransformer = std::function<Message(const PbMessage&)>;
-		// Called with a zero-initialized PbMessage before pb_decode runs —
-		// use this to install decode callbacks for callback-type fields (e.g. strings).
+		/// @brief Optional initializer called with a zero-initialized `PbMessage` before decoding.
+		///
+		/// Use this to set up callback fields (for example to provide buffers for
+		/// nanopb callback-encoded strings) prior to calling `pb_decode`.
 		using PbMessageInitializer = std::function<void(PbMessage&)>;
 
+		/// @brief Construct a `NanoPbParser`.
+		///
+		/// @param message_transformer Converts a decoded `PbMessage` into `Message`.
+		/// @param nanopb_message_fields Pointer to the nanopb message field descriptor.
+		/// @param pb_message_initializer Optional initializer invoked on a zeroed `PbMessage` before decoding.
+		/// @throws std::invalid_argument if `message_transformer` or `nanopb_message_fields` are null/empty.
 		NanoPbParser(
 			const PbMessageToMessageTransformer& message_transformer,
 			const pb_msgdesc_t* nanopb_message_fields,
@@ -33,6 +50,13 @@ namespace nanoipc {
 		NanoPbParser& operator=(const NanoPbParser&) = default;
 		virtual ~NanoPbParser() noexcept = default;
 
+		/// @brief Decode `data` (raw protobuf bytes) into a `Message`.
+		///
+		/// This operator constructs a `PbMessage`, optionally initializes it via
+		/// `m_pb_message_initializer`, then uses nanopb's `pb_decode` to populate
+		/// the `PbMessage`. On success the `m_message_transformer` is applied and
+		/// the resulting `Message` is returned. On failure a `std::runtime_error`
+		/// is thrown containing the nanopb error string.
 		Message operator()(const std::uint8_t* data, std::size_t size) const {
 			PbMessage pb_message = {};
 			if (m_pb_message_initializer) {

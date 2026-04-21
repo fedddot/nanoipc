@@ -3,6 +3,7 @@
 Now both Client and Server implement the same logic twice. Let's fix it:
 - under proto dir create the CMakeLists.txt project which does the following:
     - compiles the proto file
+    - implements example_request.hpp and example_response.hpp which define the protobuf messages as C++ structs
     - implements example_request_reader.hpp
     - implements example_request_writer.hpp
     - implements example_response_reader.hpp

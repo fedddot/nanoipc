@@ -28,19 +28,11 @@
 // Domain types
 // =============================================================================
 
-/// Strongly-typed action enum mirroring the protobuf definition.
-enum class Action : int32_t { ADD = 0, SUBTRACT = 1 };
+#include "../api/example_request.hpp"
+#include "../api/example_response.hpp"
+#include "../api/example_request_reader.hpp"
+#include "../api/example_response_writer.hpp"
 
-/// C++ request type used throughout the application.
-struct ExampleRequest {
-    int32_t value;
-    Action  action;
-};
-
-/// C++ response type used throughout the application.
-struct ExampleResponse {
-    int32_t result;
-};
 
 // =============================================================================
 // Globals
@@ -95,22 +87,7 @@ extern "C" void USART1_IRQHandler() {
 // Protobuf transformers
 // =============================================================================
 
-/// Convert a decoded `example_api_ExampleRequest` nanopb struct into the
-/// application-level `ExampleRequest` type.
-static ExampleRequest pb_to_request(const example_api_ExampleRequest& pb) {
-    return ExampleRequest{
-        .value  = pb.value,
-        .action = static_cast<Action>(pb.action)
-    };
-}
 
-/// Convert an application-level `ExampleResponse` into the nanopb struct used
-/// for encoding.
-static example_api_ExampleResponse response_to_pb(const ExampleResponse& resp) {
-    example_api_ExampleResponse pb = example_api_ExampleResponse_init_default;
-    pb.result = resp.result;
-    return pb;
-}
 
 // =============================================================================
 // Business logic
@@ -144,32 +121,17 @@ void setup() {
     uart_init(9600);
 
     // --- Reader: parses incoming ExampleRequest messages ---
-    nanoipc::NanoPbParser<ExampleRequest, example_api_ExampleRequest> parser(
-        pb_to_request,
-        example_api_ExampleRequest_fields
-    );
-
-    g_reader = new (g_reader_storage) nanoipc::NanoIpcReader<ExampleRequest>(
-        parser,
-        &g_read_buffer
-    );
+    g_reader = new (g_reader_storage) api::ExampleRequestReader(&g_read_buffer);
 
     // --- Writer: serialises outgoing ExampleResponse messages ---
-    nanoipc::NanoPbSerializer<ExampleResponse, example_api_ExampleResponse> serializer(
-        response_to_pb,
-        example_api_ExampleResponse_fields
-    );
-
     auto raw_writer = [](const uint8_t* data, const std::size_t size) {
         for (std::size_t i = 0; i < size; ++i) {
             uart_write_byte(data[i]);
         }
     };
 
-    g_writer = new (g_writer_storage) nanoipc::NanoIpcWriter<ExampleResponse>(
-        serializer,
-        raw_writer
-    );
+    g_writer = new (g_writer_storage) api::ExampleResponseWriter(raw_writer);
+
 }
 
 /// Main loop – poll the reader; when a complete request arrives, process it

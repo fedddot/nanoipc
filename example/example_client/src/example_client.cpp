@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 // NanoIPC
-#include "nanoipc_read_buffer.hpp"
+#include "nanoipc_ring_buffer.hpp"
 #include "nanoipc_reader.hpp"
 #include "nanoipc_writer.hpp"
 #include "nanopb_parser.hpp"
@@ -39,16 +39,10 @@
 // Domain types
 // =============================================================================
 
-enum class Action : int32_t { ADD = 0, SUBTRACT = 1 };
+#include "example_api.hpp"
+#include "example_request_writer.hpp"
+#include "example_response_reader.hpp"
 
-struct ExampleRequest {
-    int32_t value;
-    Action  action;
-};
-
-struct ExampleResponse {
-    int32_t result;
-};
 
 // =============================================================================
 // Serial ReadBuffer
@@ -152,16 +146,7 @@ static int open_serial(const std::string& port, const uint32_t baud) {
 // Protobuf transformers
 // =============================================================================
 
-static example_api_ExampleRequest request_to_pb(const ExampleRequest& req) {
-    example_api_ExampleRequest pb = example_api_ExampleRequest_init_default;
-    pb.value  = req.value;
-    pb.action = static_cast<example_api_Action>(req.action);
-    return pb;
-}
 
-static ExampleResponse pb_to_response(const example_api_ExampleResponse& pb) {
-    return ExampleResponse{ .result = pb.result };
-}
 
 // =============================================================================
 // CLI parsing
@@ -226,32 +211,21 @@ int main(int argc, char* argv[]) {
         SerialReadBuffer read_buffer(fd);
 
         // Writer: serialises outgoing ExampleRequest messages
-        nanoipc::NanoPbSerializer<ExampleRequest, example_api_ExampleRequest> serializer(
-            request_to_pb,
-            example_api_ExampleRequest_fields
-        );
-
-        nanoipc::NanoIpcWriter<ExampleRequest> writer(
-            serializer,
-            [fd](const std::uint8_t* data, const std::size_t size) {
-                std::size_t written = 0;
-                while (written < size) {
-                    const ssize_t n = ::write(fd, data + written, size - written);
-                    if (n < 0) {
-                        throw std::runtime_error("write error: " + std::string(std::strerror(errno)));
-                    }
-                    written += static_cast<std::size_t>(n);
+        api::ExampleRequestWriter writer([
+            fd
+        ](const std::uint8_t* data, const std::size_t size) {
+            std::size_t written = 0;
+            while (written < size) {
+                const ssize_t n = ::write(fd, data + written, size - written);
+                if (n < 0) {
+                    throw std::runtime_error("write error: " + std::string(std::strerror(errno)));
                 }
+                written += static_cast<std::size_t>(n);
             }
-        );
+        });
 
         // Reader: parses incoming ExampleResponse messages
-        nanoipc::NanoPbParser<ExampleResponse, example_api_ExampleResponse> parser(
-            pb_to_response,
-            example_api_ExampleResponse_fields
-        );
-
-        nanoipc::NanoIpcReader<ExampleResponse> reader(parser, &read_buffer);
+        api::ExampleResponseReader reader(&read_buffer);
 
         // Send the request
         writer.write(ExampleRequest{ cfg.value, cfg.action });

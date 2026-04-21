@@ -32,11 +32,39 @@ if(NOT DEFINED F_CPU)
   set(F_CPU "16000000UL" CACHE STRING "MCU clock frequency in Hz")
 endif()
 
+# ── C++ standard-library header paths ────────────────────────────────────────
+# avr-g++ does not inject its own C++ include directories automatically when
+# CMAKE_SYSTEM_NAME is Generic, so they must be added explicitly.
+#
+# The paths below are the defaults for Debian/Ubuntu (gcc-avr package).
+# They vary between distributions and compiler versions – update them to match
+# your local installation if the build reports missing headers such as <cstddef>.
+#
+#   Debian/Ubuntu (gcc-avr):
+#     /usr/avr/include/c++/<version>/
+#     /usr/avr/include/c++/<version>/avr/
+#     /usr/avr/include/
+#
+#   Arch Linux (avr-gcc AUR):
+#     /usr/avr/include/c++/<version>/
+#     /usr/lib/avr/include/
+#
+set(AVR_CXX_INCLUDE_DIR     "/usr/avr/include/c++/14" CACHE PATH
+    "Path to the avr-g++ C++ standard-library headers (contains <cstddef> etc.)")
+set(AVR_CXX_INCLUDE_DIR_AVR "${AVR_CXX_INCLUDE_DIR}/avr" CACHE PATH
+    "AVR-specific sub-directory of the C++ standard-library headers")
+set(AVR_C_INCLUDE_DIR       "/usr/avr/include" CACHE PATH
+    "Path to the AVR C headers (avr/io.h, avr/interrupt.h, …)")
+
 # ── Compiler flags ────────────────────────────────────────────────────────────
-set(AVR_COMMON_FLAGS "-mmcu=${AVR_MCU} -DF_CPU=${F_CPU} -Os -ffunction-sections -fdata-sections -fno-exceptions")
+set(AVR_COMMON_FLAGS
+  "-mmcu=${AVR_MCU} -DF_CPU=${F_CPU} -Os -ffunction-sections -fdata-sections -fno-exceptions"
+)
 
 set(CMAKE_C_FLAGS_INIT   "${AVR_COMMON_FLAGS}")
-set(CMAKE_CXX_FLAGS_INIT "${AVR_COMMON_FLAGS} -fno-rtti -std=c++17")
+set(CMAKE_CXX_FLAGS_INIT
+  "${AVR_COMMON_FLAGS} -fno-rtti -std=c++17 -isystem ${AVR_CXX_INCLUDE_DIR} -isystem ${AVR_CXX_INCLUDE_DIR_AVR} -isystem ${AVR_C_INCLUDE_DIR}"
+)
 
 # ── Linker flags ──────────────────────────────────────────────────────────────
 # -Wl,--gc-sections removes unused code/data sections to minimise flash usage.

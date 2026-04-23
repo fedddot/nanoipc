@@ -72,14 +72,14 @@ int main() {
         std::cout << "Received: " << (int)c << std::endl;
     };
 
-    // Create a UART connection
+    // Create a UART connection using serialib enums
     nanoipc::UartConnection uart(
-        "/dev/ttyUSB0",      // Device path
-        115200,              // Baudrate
-        0,                   // Parity (0=none, 1=odd, 2=even)
-        1,                   // Stop bits (1 or 2)
-        8,                   // Data bits (5-8)
-        on_char_received     // Callback for received characters
+        "/dev/ttyUSB0",           // Device path
+        115200,                   // Baudrate
+        SERIAL_PARITY_NONE,       // Parity (SERIAL_PARITY_NONE, SERIAL_PARITY_ODD, SERIAL_PARITY_EVEN)
+        SERIAL_STOPBITS_1,        // Stop bits (SERIAL_STOPBITS_1 or SERIAL_STOPBITS_2)
+        SERIAL_DATABITS_8,        // Data bits (SERIAL_DATABITS_5 through SERIAL_DATABITS_8)
+        on_char_received          // Callback for received characters
     );
 
     // Open the connection (starts background listening thread)
@@ -101,8 +101,8 @@ int main() {
 ### Key Features
 
 - **Non-blocking I/O**: The `open()` method starts a background thread for listening, allowing non-blocking communication
+- **Type-Safe Enums**: Uses serialib's native enum types (SerialParity, SerialStopBits, SerialDataBits) for compile-time safety
 - **Exception-based Error Handling**: All methods throw exceptions on errors
-- **Move Semantics**: Supports move construction and assignment for efficient resource transfer
 - **Thread-Safe**: Uses atomic flags for thread synchronization
 - **Callback-Based**: Invokes a callback function for each received character
 - **Serialib Integration**: Uses the serialib library for low-level UART access

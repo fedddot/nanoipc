@@ -6,9 +6,9 @@
 #include <functional>
 #include <thread>
 #include <atomic>
-#include <stdexcept>
 #include <memory>
 #include <string>
+#include "serialib.h"
 
 namespace nanoipc {
 	/// @brief Manages a Linux UART connection using the serialib library.
@@ -23,7 +23,8 @@ namespace nanoipc {
 	///     std::cout << "Received: " << c << std::endl;
 	/// };
 	///
-	/// UartConnection uart("/dev/ttyUSB0", 115200, 0, 1, 8, on_char_received);
+	/// UartConnection uart("/dev/ttyUSB0", 115200, SERIAL_PARITY_NONE, 
+	///                     SERIAL_STOPBITS_1, SERIAL_DATABITS_8, on_char_received);
 	/// uart.open();
 	/// uart.write(reinterpret_cast<const uint8_t*>("Hello"), 5);
 	/// uart.close();
@@ -45,19 +46,18 @@ namespace nanoipc {
 		///
 		/// @param device_path Path to the UART device (e.g., "/dev/ttyUSB0", "/dev/ttyS0").
 		/// @param baudrate Baud rate for communication (e.g., 9600, 115200).
-		/// @param parity Parity setting (0=none, 1=odd, 2=even).
-		/// @param stop_bits Number of stop bits (1 or 2).
-		/// @param data_bits Number of data bits (5, 6, 7, or 8).
+		/// @param parity Parity setting (SERIAL_PARITY_NONE, SERIAL_PARITY_EVEN, or SERIAL_PARITY_ODD).
+		/// @param stop_bits Number of stop bits (SERIAL_STOPBITS_1 or SERIAL_STOPBITS_2).
+		/// @param data_bits Number of data bits (SERIAL_DATABITS_5, 6, 7, or 8).
 		/// @param on_char_received Callback function to invoke when a character is received.
 		///                         Must not be null.
-		/// @throws std::invalid_argument if device_path is empty, on_char_received is null,
-		///         or if any parameter is invalid.
+		/// @throws std::invalid_argument if device_path is empty or on_char_received is null.
 		UartConnection(
 			const std::string& device_path,
 			const unsigned int baudrate,
-			const unsigned int parity,
-			const unsigned int stop_bits,
-			const unsigned int data_bits,
+			const SerialParity parity,
+			const SerialStopBits stop_bits,
+			const SerialDataBits data_bits,
 			OnCharReceivedCallback on_char_received
 		);
 
@@ -104,14 +104,14 @@ namespace nanoipc {
 	private:
 		std::string m_device_path;
 		unsigned int m_baudrate;
-		unsigned int m_parity;
-		unsigned int m_stop_bits;
-		unsigned int m_data_bits;
+		SerialParity m_parity;
+		SerialStopBits m_stop_bits;
+		SerialDataBits m_data_bits;
 		OnCharReceivedCallback m_on_char_received;
 		std::atomic<bool> m_is_open;
 		std::atomic<bool> m_listening;
 		std::unique_ptr<std::thread> m_listen_thread;
-		void *m_serial_port;  // serialib serial port handle
+		std::unique_ptr<serialib> m_serial_port;
 
 		/// @brief Internal method that runs in the listening thread.
 		void listen_thread_routine();
@@ -119,3 +119,4 @@ namespace nanoipc {
 }
 
 #endif // UART_CONNECTION_HPP
+

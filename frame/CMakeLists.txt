@@ -22,6 +22,16 @@ target_include_directories(
 )
 target_link_libraries(frame_reader INTERFACE reader read_buffer)
 
+add_library(frame_writer INTERFACE)
+target_sources(frame_writer INTERFACE ${nanocobs_SOURCE_DIR}/cobs.c)
+target_include_directories(
+    frame_writer
+    INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/include
+    ${nanocobs_SOURCE_DIR}
+)
+target_link_libraries(frame_writer INTERFACE writer read_buffer)
+
 if(BUILD_TESTS)
   add_subdirectory(tests)
 endif()

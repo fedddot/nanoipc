@@ -12,3 +12,15 @@ target_link_libraries(
 )
 
 add_test(NAME utils_tests COMMAND utils_tests)
+
+add_executable(json_client ${CMAKE_CURRENT_LIST_DIR}/src/json_client.cpp)
+target_link_libraries(
+    json_client
+    PRIVATE
+    cobs_frame_reader
+    cobs_frame_writer
+    json_message_reader
+    json_message_writer
+    uart_connection
+    ring_buffer
+)

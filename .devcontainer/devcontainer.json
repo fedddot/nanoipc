@@ -34,5 +34,6 @@
         }
     },
     "workspaceFolder": "/usr/app/src",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/usr/app/src,type=bind"
+    "workspaceMount": "source=${localWorkspaceFolder},target=/usr/app/src,type=bind",
+    "mounts": ["source=/dev,target=/dev,type=bind"]
 }

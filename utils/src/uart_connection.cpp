@@ -93,11 +93,9 @@ void nanoipc::UartConnection::write(const std::uint8_t *data, std::size_t data_s
 		throw std::invalid_argument("data pointer cannot be null");
 	}
     // Write each byte
-	for (std::size_t i = 0; i < data_size; ++i) {
-		if (m_serial_port.writeChar(data[i]) == -1) {
-			throw std::runtime_error("Failed to write data to UART device");
-		}
-	}
+    if (m_serial_port.writeBytes(data, data_size) != 1) {
+        throw std::runtime_error("Failed to write data to UART device");
+    }
 }
 
 void nanoipc::UartConnection::listen_thread_routine() {

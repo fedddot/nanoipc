@@ -12,7 +12,6 @@ target_include_directories(reader INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 add_library(writer INTERFACE)
 target_include_directories(writer INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 
-
 include(FetchContent)
 
 option(BUILD_TESTS "Build the project's test suite" ON)
@@ -26,20 +25,23 @@ if(BUILD_TESTS)
   enable_testing()
 endif()
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/nanoipc_utils)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/nanopb_utils)
+add_subdirectory(frame)
 
-add_library(nanoipc_read_buffer INTERFACE)
-target_include_directories(nanoipc_read_buffer INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 
-add_library(nanoipc_reader INTERFACE)
-target_include_directories(nanoipc_reader INTERFACE ${CMAKE_CURRENT_LIST_DIR})
-target_link_libraries(nanoipc_reader INTERFACE nanoipc_utils nanoipc_read_buffer)
 
-add_library(nanoipc_writer INTERFACE)
-target_include_directories(nanoipc_writer INTERFACE ${CMAKE_CURRENT_LIST_DIR})
-target_link_libraries(nanoipc_writer INTERFACE nanoipc_utils)
+# add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/nanoipc_utils)
+# add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/nanopb_utils)
 
-if(BUILD_TESTS)
-  add_subdirectory(tests)
-endif()
+
+
+# add_library(nanoipc_reader INTERFACE)
+# target_include_directories(nanoipc_reader INTERFACE ${CMAKE_CURRENT_LIST_DIR})
+# target_link_libraries(nanoipc_reader INTERFACE nanoipc_utils nanoipc_read_buffer)
+
+# add_library(nanoipc_writer INTERFACE)
+# target_include_directories(nanoipc_writer INTERFACE ${CMAKE_CURRENT_LIST_DIR})
+# target_link_libraries(nanoipc_writer INTERFACE nanoipc_utils)
+
+# if(BUILD_TESTS)
+#   add_subdirectory(tests)
+# endif()

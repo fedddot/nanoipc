@@ -11,27 +11,9 @@
 
 using namespace nanoipc;
 
-static std::optional<std::size_t> find_delimiter(const ReadBuffer& read_buffer) {
-    for (auto i = std::size_t(0); i < read_buffer.size(); ++i) {
-        if (read_buffer.get(i) == COBS_FRAME_DELIMITER) {
-            return i;
-        }
-    }
-    return std::nullopt;
-}
 
-std::optional<std::vector<std::uint8_t>> nanoipc::read_encoded_frame(ReadBuffer *read_buffer) {
-    const auto delimiter_index = find_delimiter(*read_buffer);
-    if (!delimiter_index.has_value()) {
-        return std::nullopt;
-    }
-    std::vector<std::uint8_t> encoded_frame_data;
-    encoded_frame_data.reserve(delimiter_index.value() + 1);
-    for (auto i = std::size_t(0); i <= delimiter_index.value(); ++i) {
-        encoded_frame_data.push_back(read_buffer->pop_front());
-    }
-    return std::make_optional(encoded_frame_data);
-}
+
+
 
 std::vector<std::uint8_t> nanoipc::encode_frame(const std::uint8_t *frame_data, const std::size_t frame_data_size) {
     enum: std::size_t { GROW_FACTOR = 2 };

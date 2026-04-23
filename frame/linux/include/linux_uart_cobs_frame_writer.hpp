@@ -19,7 +19,8 @@ namespace nanoipc {
 			}
             m_cobs_frame_writer = std::make_unique<CobsFrameWriter>(
                 [this](const std::uint8_t *data, std::size_t length) {
-                    if (1 != m_uart->writeBytes(reinterpret_cast<const char *>(data), length)) {
+                    unsigned int bytes_written;
+                    if (1 != m_uart->writeBytes(reinterpret_cast<const char *>(data), length, &bytes_written) || bytes_written != length) {
                         throw std::runtime_error("Failed to write bytes to UART device");
                     }
                 }

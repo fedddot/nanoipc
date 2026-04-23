@@ -35,7 +35,11 @@ namespace nanoipc {
                 }
                 m_read_buffer.push_back(static_cast<std::uint8_t>(byte));
             }
-            return m_cobs_frame_reader->read();
+            const auto frame = m_cobs_frame_reader->read();
+            if (frame.has_value()) {
+                m_uart->flushReceiver();
+            }
+            return frame;
 		}
 	private:
 		serialib *m_uart;

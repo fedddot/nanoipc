@@ -19,6 +19,7 @@ target_include_directories(test_api INTERFACE ${TEST_GENERATED_API_DIR})
 add_executable(
     message_tests
     ${CMAKE_CURRENT_LIST_DIR}/src/ut_pb_message.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/ut_json_message.cpp
 )
 
 target_link_libraries(
@@ -26,6 +27,8 @@ target_link_libraries(
     PRIVATE
     pb_message_reader
     pb_message_writer
+    json_message_reader
+    json_message_writer
     test_api
 
     cobs_frame_reader

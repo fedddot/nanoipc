@@ -1,5 +1,5 @@
-#ifndef	FRAME_WRITER_HPP
-#define	FRAME_WRITER_HPP
+#ifndef	COBS_FRAME_WRITER_HPP
+#define	COBS_FRAME_WRITER_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -52,4 +52,4 @@ namespace nanoipc {
 	};
 }
 
-#endif // FRAME_WRITER_HPP
+#endif // COBS_FRAME_WRITER_HPP

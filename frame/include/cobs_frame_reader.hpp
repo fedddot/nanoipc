@@ -1,5 +1,5 @@
-#ifndef	FRAME_READER_HPP
-#define	FRAME_READER_HPP
+#ifndef	COBS_FRAME_READER_HPP
+#define	COBS_FRAME_READER_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -65,4 +65,4 @@ namespace nanoipc {
 	};
 }
 
-#endif // FRAME_READER_HPP
+#endif // COBS_FRAME_READER_HPP

@@ -20,7 +20,11 @@
 				"systemticks.c4-dsl-extension"
 			],
 			"settings": {
-				"clangd.path": "/usr/bin/clangd"
+				"clangd.path": "/usr/bin/clangd",
+				"editor.tabSize": 4,
+				"editor.insertSpaces": true,
+				"editor.indentSize": "tabSize",
+				"editor.formatOnSave": true
 			}
 		}
 	},

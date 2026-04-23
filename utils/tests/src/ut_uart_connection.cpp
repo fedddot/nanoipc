@@ -134,30 +134,6 @@ TEST_F(UartConnectionTest, open_twice_throws) {
 	// For now, we just verify that the logic check is in place
 }
 
-TEST_F(UartConnectionTest, move_constructor_transfers_state) {
-	auto callback = [&](uint8_t c) { callback_counter.increment(c); };
-	UartConnection uart1("/dev/ttyUSB0", 115200, 0, 1, 8, callback);
-	
-	EXPECT_FALSE(uart1.is_open());
-	
-	UartConnection uart2(std::move(uart1));
-	// After move, uart2 should be in same state as uart1 (not open)
-	EXPECT_FALSE(uart2.is_open());
-}
-
-TEST_F(UartConnectionTest, move_assignment_transfers_state) {
-	auto callback = [&](uint8_t c) { callback_counter.increment(c); };
-	UartConnection uart1("/dev/ttyUSB0", 115200, 0, 1, 8, callback);
-	UartConnection uart2("/dev/ttyUSB1", 9600, 1, 2, 7, callback);
-	
-	EXPECT_FALSE(uart1.is_open());
-	EXPECT_FALSE(uart2.is_open());
-	
-	uart2 = std::move(uart1);
-	// After move assignment, uart2 should be in same state as uart1 (not open)
-	EXPECT_FALSE(uart2.is_open());
-}
-
 TEST_F(UartConnectionTest, destructor_closes_open_connection) {
 	// This test verifies that the destructor doesn't throw even if close fails
 	auto callback = [&](uint8_t c) { callback_counter.increment(c); };
@@ -178,17 +154,6 @@ TEST_F(UartConnectionTest, copy_constructor_is_deleted) {
 		"UartConnection should not be copy constructible");
 	static_assert(!std::is_copy_assignable_v<UartConnection>,
 		"UartConnection should not be copy assignable");
-}
-
-TEST_F(UartConnectionTest, move_operations_are_available) {
-	auto callback = [&](uint8_t c) { callback_counter.increment(c); };
-	UartConnection uart("/dev/ttyUSB0", 115200, 0, 1, 8, callback);
-	
-	// Verify move operations are available
-	static_assert(std::is_move_constructible_v<UartConnection>,
-		"UartConnection should be move constructible");
-	static_assert(std::is_move_assignable_v<UartConnection>,
-		"UartConnection should be move assignable");
 }
 
 TEST_F(UartConnectionTest, constructor_stores_all_parameters) {

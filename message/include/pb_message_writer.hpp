@@ -8,47 +8,25 @@
 #include <vector>
 
 #include "writer.hpp"
-#include "cobs.h"
 
 namespace nanoipc {
-	class FrameWriter: public Writer<std::vector<std::uint8_t>> {
+    template <typename Tpb_msg>
+	class PbMessageWriter: public Writer<Tpb_msg> {
 	public:
-		using RawDataWriter = std::function<void(const std::uint8_t *raw_data, const std::size_t raw_data_size)>;
-		FrameWriter(const RawDataWriter& raw_data_writer): m_raw_data_writer(raw_data_writer) {
-			if (!m_raw_data_writer) {
-				throw std::invalid_argument("raw_data_writer cannot be empty");
+		PbMessageWriter(const Writer<std::vector<std::uint8_t>> *frame_writer): m_frame_writer(frame_writer) {
+			if (!m_frame_writer) {
+				throw std::invalid_argument("invalid arguments in PbMessageWriter ctor");
 			}
 		}
-		FrameWriter(const FrameWriter&) = default;
-		FrameWriter& operator=(const FrameWriter&) = default;
+		PbMessageWriter(const PbMessageWriter&) = default;
+		PbMessageWriter& operator=(const PbMessageWriter&) = default;
 
-		void write(const std::vector<std::uint8_t>& data) const override {
-			const auto encoded_message = encode_frame(data);
-			m_raw_data_writer(encoded_message.data(), encoded_message.size());
+		void write(const Tpb_msg& data) const override {
+
 		}
 
 	private:
-		RawDataWriter m_raw_data_writer;
-        static std::vector<std::uint8_t> encode_frame(const std::vector<std::uint8_t>& data) {
-            enum: std::size_t { SIZE_INCREMENT = 2 };
-            std::vector<std::uint8_t> encoded_frame_data;
-            std::size_t receiver_data_size = data.size() + SIZE_INCREMENT;
-            std::size_t encoded_frame_data_size = 0;
-
-            while (true) {
-                encoded_frame_data.resize(receiver_data_size);
-                const auto encode_result = cobs_encode(data.data(), data.size(), encoded_frame_data.data(), encoded_frame_data.size(), &encoded_frame_data_size);
-                if (encode_result == COBS_RET_SUCCESS) {
-                    break;
-                } else if (encode_result == COBS_RET_ERR_EXHAUSTED) {
-                    receiver_data_size += SIZE_INCREMENT;
-                } else {
-                    throw std::runtime_error("failed to encode COBS frame");
-                }
-            }
-            encoded_frame_data.resize(encoded_frame_data_size);
-            return encoded_frame_data;
-        }
+        const Writer<std::vector<std::uint8_t>> *m_frame_writer;
 	};
 }
 

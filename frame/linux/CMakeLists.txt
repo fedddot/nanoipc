@@ -31,9 +31,9 @@ target_link_libraries(
     serialib_interface
 )
 
-add_executable(json_client ${CMAKE_CURRENT_LIST_DIR}/src/json_client.cpp)
+add_executable(linux_uart_json_client ${CMAKE_CURRENT_LIST_DIR}/src/linux_uart_json_client.cpp)
 target_link_libraries(
-    json_client
+    linux_uart_json_client
     PRIVATE
     linux_uart_cobs_frame_reader
     linux_uart_cobs_frame_writer

@@ -36,13 +36,3 @@ std::vector<std::uint8_t> nanoipc::encode_frame(const std::uint8_t *frame_data, 
     return encoded_frame_data;
 }
 
-std::vector<std::uint8_t> nanoipc::decode_frame(const std::uint8_t *frame_data, const std::size_t frame_data_size) {
-    std::vector<std::uint8_t> decoded_frame_data(frame_data_size);
-    std::size_t decoded_frame_data_size = 0;
-    const auto decode_result = cobs_decode(frame_data, frame_data_size, decoded_frame_data.data(), decoded_frame_data.size(), &decoded_frame_data_size);
-    if (decode_result != COBS_RET_SUCCESS) {
-        throw std::runtime_error("failed to decode COBS frame");
-    }
-    decoded_frame_data.resize(decoded_frame_data_size);
-    return decoded_frame_data;
-}

@@ -25,17 +25,12 @@ namespace nanoipc {
 		FrameReader& operator=(const FrameReader&) = default;
 		virtual ~FrameReader() noexcept = default;
 
-		std::optional<std::vector<std::uint8_t>> read() {
-			const auto delimiter_index = find_delimiter(*m_read_buffer);
-			if (!delimiter_index.has_value()) {
-				return std::nullopt;
-			}
-			std::vector<std::uint8_t> encoded_frame_data;
-			encoded_frame_data.reserve(delimiter_index.value() + 1);
-			for (auto i = std::size_t(0); i <= delimiter_index.value(); ++i) {
-				encoded_frame_data.push_back(m_read_buffer->pop_front());
-			}
-			return std::make_optional(encoded_frame_data);
+		std::optional<std::vector<std::uint8_t>> read() override {
+            const auto encoded_frame = read_encoded_frame(m_read_buffer);
+            if (!encoded_frame.has_value()) {
+                return std::nullopt;
+            }
+            return std::make_optional(decode_frame(encoded_frame.value()));
 		}
 
 	private:
@@ -48,6 +43,28 @@ namespace nanoipc {
 			}
 			return std::nullopt;
 		}
+        static std::optional<std::vector<std::uint8_t>> read_encoded_frame(ReadBuffer *read_buffer) {
+            const auto delimiter_index = find_delimiter(*read_buffer);
+			if (!delimiter_index.has_value()) {
+				return std::nullopt;
+			}
+			std::vector<std::uint8_t> encoded_frame_data;
+			encoded_frame_data.reserve(delimiter_index.value() + 1);
+			for (auto i = std::size_t(0); i <= delimiter_index.value(); ++i) {
+				encoded_frame_data.push_back(read_buffer->pop_front());
+			}
+			return std::make_optional(encoded_frame_data);
+        }
+        static std::vector<std::uint8_t> decode_frame(const std::vector<std::uint8_t>& frame_data) {
+            std::vector<std::uint8_t> decoded_frame_data(frame_data.size());
+            std::size_t decoded_frame_data_size = 0;
+            const auto decode_result = cobs_decode(frame_data.data(), frame_data.size(), decoded_frame_data.data(), decoded_frame_data.size(), &decoded_frame_data_size);
+            if (decode_result != COBS_RET_SUCCESS) {
+                throw std::runtime_error("failed to decode COBS frame");
+            }
+            decoded_frame_data.resize(decoded_frame_data_size);
+            return decoded_frame_data;
+        }
 	};
 }
 

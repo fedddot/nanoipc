@@ -23,7 +23,6 @@ namespace nanoipc {
 		}
 		FrameReader(const FrameReader&) = default;
 		FrameReader& operator=(const FrameReader&) = default;
-		virtual ~FrameReader() noexcept = default;
 
 		std::optional<std::vector<std::uint8_t>> read() override {
             const auto encoded_frame = read_encoded_frame(m_read_buffer);

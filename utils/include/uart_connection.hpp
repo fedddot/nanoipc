@@ -111,7 +111,7 @@ namespace nanoipc {
 		std::atomic<bool> m_is_open;
 		std::atomic<bool> m_listening;
 		std::unique_ptr<std::thread> m_listen_thread;
-		std::unique_ptr<serialib> m_serial_port;
+		serialib m_serial_port;
 
 		/// @brief Internal method that runs in the listening thread.
 		void listen_thread_routine();

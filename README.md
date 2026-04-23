@@ -6,17 +6,45 @@ A minimal C++17 IPC library for embedded systems using [nanopb](https://github.c
 
 ```
 nanoipc/
-├── nanoipc_read_buffer.hpp   # ReadBuffer interface
-├── nanoipc_reader.hpp        # NanoIpcReader – deserialises incoming messages
-├── nanoipc_writer.hpp        # NanoIpcWriter – serialises outgoing messages
-├── nanoipc_utils/            # COBS encode/decode helpers + NanoipcRingBuffer
-├── nanopb_utils/             # nanopb parser and serialiser adapters
-├── tests/                    # Google Test suite (host build)
+├── include/                    # Core interfaces
+│   ├── reader.hpp             # Reader<T> template interface
+│   └── writer.hpp             # Writer<T> template interface
+├── frame/                      # COBS frame layer
+│   ├── include/
+│   │   ├── read_buffer.hpp    # ReadBuffer interface for byte storage
+│   │   ├── ring_buffer.hpp    # Fixed-capacity circular buffer
+│   │   ├── cobs_frame_reader.hpp  # COBS frame deserialization
+│   │   └── cobs_frame_writer.hpp  # COBS frame serialization
+│   └── tests/
+│       └── src/
+│           ├── ut_cobs_frame.cpp       # COBS frame tests
+│           └── ut_ring_buffer.cpp      # Ring buffer tests
+├── message/                    # Protocol Buffer message layer
+│   ├── include/
+│   │   ├── pb_message_reader.hpp  # Protocol Buffer deserialization
+│   │   └── pb_message_writer.hpp  # Protocol Buffer serialization
+│   └── tests/
+│       └── src/
+│           └── ut_pb_message.cpp     # Protocol Buffer tests
+├── CMakeLists.txt              # Build configuration
+├── tests/                      # Integration tests (host build)
 └── example/
-    ├── api/                  # Shared API: example.proto, typed reader/writer classes
-    ├── example_client/       # Host-side client (Linux/macOS, reads/writes a serial fd)
-    └── example_server/       # Raspberry Pi Pico firmware (see below)
+    ├── api/                    # Shared API: example.proto, generated message types
+    ├── example_client/         # Host-side client (Linux/macOS, reads/writes a serial port)
+    └── example_server/         # Raspberry Pi Pico firmware
 ```
+
+## Architecture
+
+nanoipc uses a layered architecture:
+
+1. **Reader/Writer Interfaces** - Generic templates for reading/writing typed data
+2. **ReadBuffer** - Abstract interface for buffering incoming bytes
+3. **RingBuffer** - Concrete implementation of ReadBuffer (fixed-capacity circular buffer)
+4. **Frame Layer** - COBS encoding/decoding for delimiting messages on byte streams
+   - CobsFrameReader/Writer: serialize/deserialize frames
+5. **Message Layer** - Protocol Buffer encoding/decoding
+   - PbMessageReader/Writer: serialize/deserialize protobuf messages
 
 ## Example server (Raspberry Pi Pico – RP2040)
 
@@ -106,3 +134,4 @@ cmake -B build-tests
 cmake --build build-tests
 ctest --test-dir build-tests
 ```
+

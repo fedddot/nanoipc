@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 
 #include "read_buffer.hpp"
 
@@ -62,7 +63,11 @@ namespace nanoipc {
 
         /// @brief Peek at a byte without removing it.
         /// @param index Zero-based offset from the front of the buffer.
+        /// @throws std::out_of_range if index is >= size().
         std::uint8_t get(const std::size_t index) const override {
+            if (index >= m_size) {
+                throw std::out_of_range("RingBuffer: index out of range");
+            }
             return m_data[(m_head + index) % N];
         }
 

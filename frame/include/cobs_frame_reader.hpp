@@ -12,8 +12,18 @@
 #include "cobs.h"
 
 namespace nanoipc {
+	/// @brief Deserializes COBS-encoded frames into byte vectors.
+	///
+	/// CobsFrameReader reads COBS (Consistent Overhead Byte Stuffing) encoded
+	/// frames from a ReadBuffer, decodes them, and provides the decoded data
+	/// as std::vector<std::uint8_t>. It implements the Reader interface for
+	/// frame-oriented transport over byte streams such as UART.
 	class CobsFrameReader: public Reader<std::vector<std::uint8_t>> {
 	public:
+		/// @brief Construct a CobsFrameReader.
+		/// @param read_buffer Pointer to the ReadBuffer from which encoded frames are read.
+		///                    Must not be null.
+		/// @throws std::invalid_argument if read_buffer is null.
 		CobsFrameReader(ReadBuffer *read_buffer): m_read_buffer(read_buffer) {
 			if (!m_read_buffer) {
 				throw std::invalid_argument("read_buffer cannot be null");
@@ -22,6 +32,8 @@ namespace nanoipc {
 		CobsFrameReader(const CobsFrameReader&) = default;
 		CobsFrameReader& operator=(const CobsFrameReader&) = default;
 
+		/// @brief Read and decode the next complete COBS frame.
+		/// @return An optional containing the decoded frame data, or std::nullopt if no complete frame is available.
 		std::optional<std::vector<std::uint8_t>> read() override {
             const auto encoded_frame = read_encoded_frame(m_read_buffer);
             if (!encoded_frame.has_value()) {

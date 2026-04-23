@@ -3,13 +3,13 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <optional>
 #include <stdexcept>
 #include <vector>
 
 #include "read_buffer.hpp"
 #include "reader.hpp"
+#include "cobs.h"
 
 namespace nanoipc {
 	class FrameReader: public Reader<std::vector<std::uint8_t>> {
@@ -26,14 +26,14 @@ namespace nanoipc {
 		virtual ~FrameReader() noexcept = default;
 
 		std::optional<std::vector<std::uint8_t>> read() {
-			const auto delimiter_index = find_delimiter(*read_buffer);
+			const auto delimiter_index = find_delimiter(*m_read_buffer);
 			if (!delimiter_index.has_value()) {
 				return std::nullopt;
 			}
 			std::vector<std::uint8_t> encoded_frame_data;
 			encoded_frame_data.reserve(delimiter_index.value() + 1);
 			for (auto i = std::size_t(0); i <= delimiter_index.value(); ++i) {
-				encoded_frame_data.push_back(read_buffer->pop_front());
+				encoded_frame_data.push_back(m_read_buffer->pop_front());
 			}
 			return std::make_optional(encoded_frame_data);
 		}

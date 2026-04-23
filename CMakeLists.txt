@@ -26,7 +26,7 @@ if(BUILD_TESTS)
 endif()
 
 add_subdirectory(frame)
-
+add_subdirectory(message)
 
 # add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/nanopb_utils)
 

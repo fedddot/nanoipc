@@ -1,6 +1,6 @@
 add_executable(
     frame_tests
-    ${CMAKE_CURRENT_LIST_DIR}/src/ut_frame.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/ut_cobs_frame.cpp
 )
 
 target_link_libraries(

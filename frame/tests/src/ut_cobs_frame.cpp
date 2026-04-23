@@ -8,7 +8,7 @@
 
 using namespace nanoipc;
 
-TEST(ut_frame, cobs_frame_reader_ctor_sanity) {
+TEST(ut_cobs_frame, cobs_frame_reader_ctor_sanity) {
     // WHEN
     RingBuffer<10> ring_buffer;
 
@@ -16,7 +16,7 @@ TEST(ut_frame, cobs_frame_reader_ctor_sanity) {
     ASSERT_NO_THROW(FrameReader reader(&ring_buffer));
 }
 
-TEST(ut_frame, cobs_frame_writer_ctor_sanity) {
+TEST(ut_cobs_frame, cobs_frame_writer_ctor_sanity) {
     // WHEN
     const auto dummy_raw_data_writer = [](const std::uint8_t *raw_data, const std::size_t raw_data_size) {
 
@@ -26,7 +26,7 @@ TEST(ut_frame, cobs_frame_writer_ctor_sanity) {
     ASSERT_NO_THROW(FrameWriter writer(dummy_raw_data_writer));
 }
 
-TEST(ut_frame, frame_writing_reading_sanity) {
+TEST(ut_cobs_frame, frame_writing_reading_sanity) {
     // GIVEN
     const auto frame_data = std::vector<std::uint8_t>{0x01, 0x02, 0x03, 0x00, 0x04};
 

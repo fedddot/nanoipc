@@ -8,6 +8,10 @@ FetchContent_MakeAvailable(nanocobs)
 add_library(read_buffer INTERFACE)
 target_include_directories(read_buffer INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 
+add_library(ring_buffer INTERFACE)
+target_include_directories(ring_buffer INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_link_libraries(ring_buffer INTERFACE read_buffer)
+
 add_library(frame_reader INTERFACE)
 target_sources(frame_reader INTERFACE ${nanocobs_SOURCE_DIR}/cobs.c)
 target_include_directories(

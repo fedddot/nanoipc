@@ -1,16 +1,16 @@
-#ifndef NANOIPC_RING_BUFFER_HPP
-#define NANOIPC_RING_BUFFER_HPP
+#ifndef RING_BUFFER_HPP
+#define RING_BUFFER_HPP
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
 
-#include "nanoipc_read_buffer.hpp"
+#include "read_buffer.hpp"
 
 namespace nanoipc {
     /// @brief Fixed-capacity ring buffer implementing the ReadBuffer interface.
     ///
-    /// NanoipcRingBuffer provides a compact, header-only circular buffer that
+    /// RingBuffer provides a compact, header-only circular buffer that
     /// implements nanoipc::ReadBuffer so it can be used with NanoIpcReader. The
     /// buffer supports writing bytes with push_back() and reading them via
     /// pop_front(), size(), and get().
@@ -24,10 +24,10 @@ namespace nanoipc {
     ///   appropriate synchronization or use an ISR-safe variant.
     /// - When the buffer is full, push_back() overwrites the oldest byte.
     template <std::size_t N>
-    class NanoipcRingBuffer : public ReadBuffer {
+    class RingBuffer : public ReadBuffer {
     public:
         /// @brief Construct an empty ring buffer.
-        NanoipcRingBuffer() : m_head(0), m_tail(0), m_size(0) {}
+        RingBuffer() : m_head(0), m_tail(0), m_size(0) {}
 
         /// @brief Append a byte to the back of the buffer.
         ///
@@ -74,4 +74,4 @@ namespace nanoipc {
     };
 }
 
-#endif // NANOIPC_RING_BUFFER_HPP
+#endif // RING_BUFFER_HPP

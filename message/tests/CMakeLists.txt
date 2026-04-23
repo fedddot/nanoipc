@@ -28,8 +28,8 @@ target_link_libraries(
     pb_message_writer
     test_api
 
-    frame_reader
-    frame_writer
+    cobs_frame_reader
+    cobs_frame_writer
     ring_buffer
 
     gtest

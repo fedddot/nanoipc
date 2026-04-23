@@ -6,8 +6,8 @@ add_executable(
 target_link_libraries(
     frame_tests
     PRIVATE
-    frame_reader
-    frame_writer
+    cobs_frame_reader
+    cobs_frame_writer
     ring_buffer
     gtest
     gtest_main

@@ -2,13 +2,13 @@
 #include <optional>
 #include <vector>
 
-#include "frame_reader.hpp"
-#include "frame_writer.hpp"
+#include "cobs_frame_reader.hpp"
+#include "cobs_frame_writer.hpp"
 #include "ring_buffer.hpp"
 
 using namespace nanoipc;
 
-TEST(ut_frame, frame_reader_ctor_sanity) {
+TEST(ut_frame, cobs_frame_reader_ctor_sanity) {
     // WHEN
     RingBuffer<10> ring_buffer;
 
@@ -16,7 +16,7 @@ TEST(ut_frame, frame_reader_ctor_sanity) {
     ASSERT_NO_THROW(FrameReader reader(&ring_buffer));
 }
 
-TEST(ut_frame, frame_writer_ctor_sanity) {
+TEST(ut_frame, cobs_frame_writer_ctor_sanity) {
     // WHEN
     const auto dummy_raw_data_writer = [](const std::uint8_t *raw_data, const std::size_t raw_data_size) {
 

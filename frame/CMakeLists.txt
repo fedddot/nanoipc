@@ -12,25 +12,25 @@ add_library(ring_buffer INTERFACE)
 target_include_directories(ring_buffer INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 target_link_libraries(ring_buffer INTERFACE read_buffer)
 
-add_library(frame_reader INTERFACE)
-target_sources(frame_reader INTERFACE ${nanocobs_SOURCE_DIR}/cobs.c)
+add_library(cobs_frame_reader INTERFACE)
+target_sources(cobs_frame_reader INTERFACE ${nanocobs_SOURCE_DIR}/cobs.c)
 target_include_directories(
-    frame_reader
+    cobs_frame_reader
     INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${nanocobs_SOURCE_DIR}
 )
-target_link_libraries(frame_reader INTERFACE reader read_buffer)
+target_link_libraries(cobs_frame_reader INTERFACE reader read_buffer)
 
-add_library(frame_writer INTERFACE)
-target_sources(frame_writer INTERFACE ${nanocobs_SOURCE_DIR}/cobs.c)
+add_library(cobs_frame_writer INTERFACE)
+target_sources(cobs_frame_writer INTERFACE ${nanocobs_SOURCE_DIR}/cobs.c)
 target_include_directories(
-    frame_writer
+    cobs_frame_writer
     INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${nanocobs_SOURCE_DIR}
 )
-target_link_libraries(frame_writer INTERFACE writer)
+target_link_libraries(cobs_frame_writer INTERFACE writer)
 
 if(BUILD_TESTS)
   add_subdirectory(tests)

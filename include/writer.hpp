@@ -6,7 +6,7 @@ namespace nanoipc {
 	class Writer {
 	public:
 		virtual ~Writer() noexcept = default;
-		virtual void write(const T& data) = 0;
+		virtual void write(const T& data) const = 0;
 	};
 }
 

@@ -16,13 +16,13 @@ include(FetchContent)
 
 option(BUILD_TESTS "Build the project's test suite" ON)
 if(BUILD_TESTS)
-  FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG		 v1.17.0
-  )
-  FetchContent_MakeAvailable(googletest)
-  enable_testing()
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG		 v1.17.0
+    )
+    FetchContent_MakeAvailable(googletest)
+    enable_testing()
 endif()
 
 add_subdirectory(frame)

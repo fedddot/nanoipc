@@ -32,9 +32,9 @@ namespace nanoipc {
 	private:
 		RawDataWriter m_raw_data_writer;
         static std::vector<std::uint8_t> encode_frame(const std::vector<std::uint8_t>& data) {
-            enum: std::size_t { GROW_FACTOR = 2 };
+            enum: std::size_t { SIZE_INCREMENT = 2 };
             std::vector<std::uint8_t> encoded_frame_data;
-            std::size_t receiver_data_size = data.size();
+            std::size_t receiver_data_size = data.size() + SIZE_INCREMENT;
             std::size_t encoded_frame_data_size = 0;
 
             while (true) {
@@ -43,7 +43,7 @@ namespace nanoipc {
                 if (encode_result == COBS_RET_SUCCESS) {
                     break;
                 } else if (encode_result == COBS_RET_ERR_EXHAUSTED) {
-                    receiver_data_size *= GROW_FACTOR;
+                    receiver_data_size += SIZE_INCREMENT;
                 } else {
                     throw std::runtime_error("failed to encode COBS frame");
                 }

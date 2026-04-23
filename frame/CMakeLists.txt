@@ -30,7 +30,7 @@ target_include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${nanocobs_SOURCE_DIR}
 )
-target_link_libraries(frame_writer INTERFACE writer read_buffer)
+target_link_libraries(frame_writer INTERFACE writer)
 
 if(BUILD_TESTS)
   add_subdirectory(tests)

@@ -1,61 +1,53 @@
-#include <stdexcept>
-#include <string>
+#include <optional>
 #include <vector>
 
 #include "gtest/gtest.h"
-
 #include "pb_message_reader.hpp"
 #include "pb_message_writer.hpp"
 
 using namespace nanoipc;
 
-using TestParser = NanoPbParser<TestMessage, test_api_TestMessage>;
+TEST(ut_pb_message, pb_message_reader_ctor_sanity) {
+    // WHEN
+    RingBuffer<10> ring_buffer;
 
-static bool decode_string(pb_istream_t* stream, const pb_field_t* /*field*/, void** arg) {
-	auto* str = static_cast<std::string*>(*arg);
-	str->resize(stream->bytes_left);
-	return pb_read(stream, reinterpret_cast<pb_byte_t*>(str->data()), str->size());
+    // THEN
+    ASSERT_NO_THROW(PbMessageReader reader(&ring_buffer));
 }
 
-TEST(ut_nanopb_parser, invalid_args) {
-	ASSERT_THROW(TestParser(nullptr, test_api_TestMessage_fields), std::invalid_argument);
-	ASSERT_THROW(TestParser([](const test_api_TestMessage&) { return TestMessage{}; }, nullptr), std::invalid_argument);
+TEST(ut_pb_message, pb_message_writer_ctor_sanity) {
+    // WHEN
+    const auto dummy_raw_data_writer = [](const std::uint8_t *raw_data, const std::size_t raw_data_size) {
+
+    };
+
+    // THEN
+    ASSERT_NO_THROW(PbMessageWriter writer(dummy_raw_data_writer));
 }
 
-TEST(ut_nanopb_parser, sanity) {
-	// GIVEN: protobuf encoding of {int_value: 42, string_value: "test"}
-	// (mirror of ut_nanopb_serializer.sanity expected output)
-	const std::vector<std::uint8_t> encoded = {0x08, 0x2A, 0x12, 0x04, 't', 'e', 's', 't'};
-	std::string decoded_string;
-	TestParser parser(
-		[&decoded_string](const test_api_TestMessage& pb_msg) -> TestMessage {
-			return {pb_msg.int_value, decoded_string};
-		},
-		test_api_TestMessage_fields,
-		[&decoded_string](test_api_TestMessage& pb_msg) {
-			pb_msg.string_value.funcs.decode = decode_string;
-			pb_msg.string_value.arg = &decoded_string;
-		}
-	);
+TEST(ut_pb_message, pb_message_writing_reading_sanity) {
+    // GIVEN
+    const auto pb_message_data = std::vector<std::uint8_t>{0x01, 0x02, 0x03, 0x00, 0x04};
 
-	// WHEN
-	const auto result = parser(encoded);
+    // WHEN
+    RingBuffer<10> ring_buffer;
+    const auto raw_data_writer = [&ring_buffer](const std::uint8_t *raw_data, const std::size_t raw_data_size) {
+        for (std::size_t i = 0; i < raw_data_size; ++i) {
+            ring_buffer.push_back(raw_data[i]);
+        }
+    };
+    PbMessageReader reader(&ring_buffer);
+    PbMessageWriter writer(raw_data_writer);
+    std::optional<std::vector<std::uint8_t>> read_pb_message_data(std::nullopt);
 
-	// THEN
-	ASSERT_EQ(result.int_value, 42);
-	ASSERT_EQ(result.string_value, "test");
-}
+    // THEN
+    // before writing, there should be no pb_message data to read
+    ASSERT_NO_THROW(read_pb_message_data = reader.read());
+    ASSERT_FALSE(read_pb_message_data.has_value());
 
-TEST(ut_nanopb_parser, invalid_data) {
-	// GIVEN: truncated varint — tag byte for field 1 with no value following
-	const std::vector<std::uint8_t> corrupt_data = {0x08};
-	TestParser parser(
-		[](const test_api_TestMessage& pb_msg) -> TestMessage {
-			return {pb_msg.int_value, ""};
-		},
-		test_api_TestMessage_fields
-	);
-
-	// WHEN / THEN
-	ASSERT_THROW(parser(corrupt_data), std::runtime_error);
+    // after writing, the read pb_message data should be the same as the written pb_message data
+    ASSERT_NO_THROW(writer.write(pb_message_data));
+    ASSERT_NO_THROW(read_pb_message_data = reader.read());
+    ASSERT_TRUE(read_pb_message_data.has_value());
+    ASSERT_EQ(read_pb_message_data.value(), pb_message_data);
 }

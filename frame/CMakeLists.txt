@@ -35,3 +35,8 @@ target_link_libraries(cobs_frame_writer INTERFACE writer)
 if(BUILD_TESTS)
   add_subdirectory(tests)
 endif()
+
+option(NANOIPC_LINUX_FEATURES "Build with Linux-specific features" ON)
+if(NANOIPC_LINUX_FEATURES)
+  add_subdirectory(linux)
+endif()

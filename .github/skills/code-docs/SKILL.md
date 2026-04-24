@@ -1,3 +1,9 @@
+---
+name: "Doxygen Documentation"
+description: "Guidelines for adding Doxygen documentation to C++ headers in the nanoipc repository."
+version: "1.0"
+---
+
 # Skill: Doxygen Documentation
 
 Guidelines for adding Doxygen documentation to C++ headers in this repository.

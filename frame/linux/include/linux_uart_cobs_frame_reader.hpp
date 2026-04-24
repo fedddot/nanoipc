@@ -15,9 +15,18 @@
 #include "cobs_frame_reader.hpp"
 
 namespace nanoipc {
+    /// @brief Reads COBS-framed byte vectors from a Linux UART device.
+    ///
+    /// Drains all available bytes from the UART on each call to read(),
+    /// buffers them in an internal ring buffer, and delegates COBS
+    /// frame reassembly to CobsFrameReader.
+    ///
+    /// @tparam N Capacity of the internal ring buffer in bytes.
     template <std::size_t N>
 	class LinuxUartCobsFrameReader: public Reader<std::vector<std::uint8_t>> {
 	public:
+        /// @brief Constructs a reader bound to the given UART device.
+        /// @param uart Pointer to an open serialib instance. Must not be null.
 		LinuxUartCobsFrameReader(serialib *uart): m_uart(uart), m_read_buffer() {
 			if (!m_uart) {
 				throw std::invalid_argument("uart cannot be null");
@@ -27,6 +36,8 @@ namespace nanoipc {
 		LinuxUartCobsFrameReader(const LinuxUartCobsFrameReader&) = delete;
 		LinuxUartCobsFrameReader& operator=(const LinuxUartCobsFrameReader&) = delete;
 
+        /// @brief Reads one complete COBS frame, if available.
+        /// @return The decoded frame payload, or std::nullopt if no complete frame is ready yet.
 		std::optional<std::vector<std::uint8_t>> read() override {
             while (0 < m_uart->available()) {
                 char byte;

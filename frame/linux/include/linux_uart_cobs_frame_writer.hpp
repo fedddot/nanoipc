@@ -11,8 +11,14 @@
 #include "cobs_frame_writer.hpp"
 
 namespace nanoipc {
+    /// @brief Writes COBS-framed byte vectors to a Linux UART device.
+    ///
+    /// Encodes each payload with COBS framing via CobsFrameWriter and
+    /// transmits the resulting bytes through a serialib UART instance.
 	class LinuxUartCobsFrameWriter: public Writer<std::vector<std::uint8_t>> {
 	public:
+        /// @brief Constructs a writer bound to the given UART device.
+        /// @param uart Pointer to an open serialib instance. Must not be null.
 		LinuxUartCobsFrameWriter(serialib *uart): m_uart(uart) {
 			if (!m_uart) {
 				throw std::invalid_argument("uart cannot be null");
@@ -29,6 +35,8 @@ namespace nanoipc {
 		LinuxUartCobsFrameWriter(const LinuxUartCobsFrameWriter&) = delete;
 		LinuxUartCobsFrameWriter& operator=(const LinuxUartCobsFrameWriter&) = delete;
 
+        /// @brief Encodes @p data as a COBS frame and transmits it over UART.
+        /// @param data The raw payload bytes to send.
 		void write(const std::vector<std::uint8_t>& data) const override {
             m_cobs_frame_writer->write(data);
 		}

@@ -14,8 +14,8 @@ target_include_directories(writer INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 
 include(FetchContent)
 
-option(BUILD_TESTS "Build the project's test suite" ON)
-if(BUILD_TESTS)
+option(NANOIPC_TESTS "Build the project's test suite" ON)
+if(NANOIPC_TESTS)
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
@@ -25,5 +25,8 @@ if(BUILD_TESTS)
     enable_testing()
 endif()
 
+option(NANOIPC_LINUX_FEATURES "Build with Linux-specific features" ON)
+
+add_subdirectory(apps)
 add_subdirectory(frame)
 add_subdirectory(message)

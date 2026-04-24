@@ -49,6 +49,6 @@ target_include_directories(json_message_writer INTERFACE ${CMAKE_CURRENT_LIST_DI
 target_include_directories(json_message_writer INTERFACE ${jsoncpp_SOURCE_DIR}/include)
 target_link_libraries(json_message_writer INTERFACE jsoncpp_static writer)
 
-if(BUILD_TESTS)
+if(NANOIPC_TESTS)
     add_subdirectory(tests)
 endif()

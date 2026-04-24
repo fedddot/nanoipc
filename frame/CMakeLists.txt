@@ -32,6 +32,10 @@ target_include_directories(
 )
 target_link_libraries(cobs_frame_writer INTERFACE writer)
 
-if(BUILD_TESTS)
+if(NANOIPC_TESTS)
   add_subdirectory(tests)
+endif()
+
+if(NANOIPC_LINUX_FEATURES)
+  add_subdirectory(linux)
 endif()

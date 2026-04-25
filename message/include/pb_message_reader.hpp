@@ -5,6 +5,7 @@
 #include <functional>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "pb.h"
@@ -61,7 +62,7 @@ namespace nanoipc {
 					"failed to decode protocol buffer: " + std::string(PB_GET_ERROR(&istream))
 				);
 			}
-            return std::make_optional(pb_message);
+            return std::make_optional(std::move(pb_message));
 		}
 
 	private:

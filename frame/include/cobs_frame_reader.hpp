@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "read_buffer.hpp"

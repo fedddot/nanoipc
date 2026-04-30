@@ -21,12 +21,18 @@ jobs:
       with:
         submodules: recursive
 
+    - name: retrieve user and group id
+      id: get_ids
+      run: |
+        echo "runner_uid=$(id -u)" >> $GITHUB_OUTPUT
+        echo "runner_gid=$(id -g)" >> $GITHUB_OUTPUT
+
     - name: build dev image
       uses: docker/build-push-action@v3
       with:
         build-args: |
-          UID=${{env.UID}}
-          GID=${{env.GID}}
+          UID=${{steps.get_ids.outputs.runner_uid}}
+          GID=${{steps.get_ids.outputs.runner_gid}}
         tags: nanoipcdev:latest
         file: ${{github.workspace}}/docker/dev.dockerfile
 

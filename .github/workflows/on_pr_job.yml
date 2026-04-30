@@ -41,14 +41,14 @@ jobs:
       working-directory: ${{github.workspace}}
       run: |
         mkdir -p ${{env.WORKSPACE_BIN_DIR}}
-        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} ${{steps.build_dev_image.outputs.image}} -c "cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DNANOIPC_TESTS=ON -DNANOIPC_LINUX_FEATURES=ON -S ${{env.CONTAINER_SRC_DIR}} -B ${{env.CONTAINER_BIN_DIR}}"
+        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} ${{steps.build_dev_image.outputs.imageid}} -c "cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DNANOIPC_TESTS=ON -DNANOIPC_LINUX_FEATURES=ON -S ${{env.CONTAINER_SRC_DIR}} -B ${{env.CONTAINER_BIN_DIR}}"
     
     - name: build
       working-directory: ${{github.workspace}}
       run: |
-        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "cmake --build ${{env.CONTAINER_BIN_DIR}}"
+        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} ${{steps.build_dev_image.outputs.imageid}} -c "cmake --build ${{env.CONTAINER_BIN_DIR}}"
 
     - name: run uts
       working-directory: ${{github.workspace}}
       run: |
-        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} -w ${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "ctest --rerun-failed --output-on-failure"
+        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} -w ${{env.CONTAINER_BIN_DIR}} ${{steps.build_dev_image.outputs.imageid}} -c "ctest --rerun-failed --output-on-failure"

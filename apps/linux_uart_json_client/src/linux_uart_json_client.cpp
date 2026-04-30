@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <chrono>
 #include <iostream>
 #include <fstream>
 
@@ -67,7 +68,9 @@ int main(int argc, char* argv[]) {
     std::string parity_str = "NONE";
     unsigned int data_bits = 8;
     std::string stop_bits_str = "1";
-    std::string request_file;
+    std::string request_path;
+    std::string response_path;
+    unsigned int timeout_sec = 3;
     
     app.add_option("--port", port, "Device path (e.g., /dev/ttyACM0, /dev/ttyUSB0)")
         ->default_val("/dev/ttyACM0");
@@ -88,7 +91,15 @@ int main(int argc, char* argv[]) {
         ->default_val("1")
         ->check(CLI::IsMember({"1", "1.5", "2"}));
     
-    app.add_option("--request-file", request_file, "Path to JSON file containing request message");
+    app.add_option("--request", request_path, "Path to JSON file containing request message")
+        ->required();
+    
+    app.add_option("--response", response_path, "Path to write the JSON response")
+        ->required();
+    
+    app.add_option("--timeout", timeout_sec, "Timeout in seconds waiting for response")
+        ->default_val("3")
+        ->check(CLI::NonNegativeNumber);
     
     CLI11_PARSE(app, argc, argv);
     
@@ -99,11 +110,11 @@ int main(int argc, char* argv[]) {
     
     // Read request message
     Json::Value request;
-    if (!request_file.empty()) {
-        request = read_json_from_file(request_file);
-    } else {
-        request["type"] = "test_request";
-        request["payload"] = "Hello, world!";
+    try {
+        request = read_json_from_file(request_path);
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << std::endl;
+        return 1;
     }
     std::cout << "Sending request: " << request.toStyledString() << std::endl;
     
@@ -131,14 +142,30 @@ int main(int argc, char* argv[]) {
     uart.flushReceiver();
     json_writer.write(request);
     
-    // Read response
+    // Read response with timeout
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(timeout_sec);
     while (true) {
+        if (std::chrono::steady_clock::now() >= deadline) {
+            std::cerr << "Timeout: no response received within " << timeout_sec << " second(s)" << std::endl;
+            uart.closeDevice();
+            return 1;
+        }
         const auto response = json_reader.read();
         if (!response.has_value()) {
             continue;
         }
         const auto msg = response.value();
         std::cout << "Received response: " << msg.toStyledString() << std::endl;
+        
+        // Write response to file
+        std::ofstream response_file(response_path);
+        if (!response_file.is_open()) {
+            std::cerr << "Failed to open response file for writing: " << response_path << std::endl;
+            uart.closeDevice();
+            return 1;
+        }
+        Json::StreamWriterBuilder writer_builder;
+        response_file << Json::writeString(writer_builder, msg);
         break;
     }
     

@@ -28,6 +28,7 @@ jobs:
         echo "runner_gid=$(id -g)" >> $GITHUB_OUTPUT
 
     - name: build dev image
+      id: build_dev_image
       uses: docker/build-push-action@v3
       with:
         build-args: |
@@ -40,7 +41,7 @@ jobs:
       working-directory: ${{github.workspace}}
       run: |
         mkdir -p ${{env.WORKSPACE_BIN_DIR}}
-        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DNANOIPC_TESTS=ON -DNANOIPC_LINUX_FEATURES=ON -S ${{env.CONTAINER_SRC_DIR}} -B ${{env.CONTAINER_BIN_DIR}}"
+        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} ${{steps.build_dev_image.outputs.image}} -c "cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DNANOIPC_TESTS=ON -DNANOIPC_LINUX_FEATURES=ON -S ${{env.CONTAINER_SRC_DIR}} -B ${{env.CONTAINER_BIN_DIR}}"
     
     - name: build
       working-directory: ${{github.workspace}}

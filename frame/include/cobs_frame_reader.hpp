@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "read_buffer.hpp"
@@ -35,11 +36,11 @@ namespace nanoipc {
 		/// @brief Read and decode the next complete COBS frame.
 		/// @return An optional containing the decoded frame data, or std::nullopt if no complete frame is available.
 		std::optional<std::vector<std::uint8_t>> read() override {
-            const auto encoded_frame = read_encoded_frame(m_read_buffer);
+            auto encoded_frame = read_encoded_frame(m_read_buffer);
             if (!encoded_frame.has_value()) {
                 return std::nullopt;
             }
-            return std::make_optional(decode_frame(encoded_frame.value()));
+            return std::make_optional(std::move(decode_frame(encoded_frame.value())));
 		}
 
 	private:
@@ -62,7 +63,7 @@ namespace nanoipc {
 			for (auto i = std::size_t(0); i <= delimiter_index.value(); ++i) {
 				encoded_frame_data.push_back(read_buffer->pop_front());
 			}
-			return std::make_optional(encoded_frame_data);
+			return std::make_optional(std::move(encoded_frame_data));
         }
         static std::vector<std::uint8_t> decode_frame(const std::vector<std::uint8_t>& frame_data) {
             std::vector<std::uint8_t> decoded_frame_data(frame_data.size());
@@ -72,7 +73,7 @@ namespace nanoipc {
                 throw std::runtime_error("failed to decode COBS frame");
             }
             decoded_frame_data.resize(decoded_frame_data_size);
-            return decoded_frame_data;
+            return std::move(decoded_frame_data);
         }
 	};
 }

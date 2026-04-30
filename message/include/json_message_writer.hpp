@@ -36,8 +36,9 @@ namespace nanoipc {
             Json::StreamWriterBuilder builder;
             builder["indentation"] = "";
             std::string json_str = Json::writeString(builder, data);
-
             std::vector<std::uint8_t> bytes(json_str.begin(), json_str.end());
+            json_str.clear();
+            json_str.shrink_to_fit();
             m_frame_writer->write(bytes);
         }
 

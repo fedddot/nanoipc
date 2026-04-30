@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "writer.hpp"
@@ -60,7 +61,7 @@ namespace nanoipc {
                 }
             }
             encoded_frame_data.resize(encoded_frame_data_size);
-            return encoded_frame_data;
+            return std::move(encoded_frame_data);
         }
 	};
 }

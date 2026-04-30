@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "json/reader.h"
@@ -34,15 +35,14 @@ namespace nanoipc {
         /// @brief Read and decode the next JSON message.
         /// @return An optional containing the decoded message, or std::nullopt if no frame data is available.
         std::optional<Json::Value> read() override {
-            const auto frame_data = m_frame_reader->read();
+            auto frame_data = m_frame_reader->read();
             if (!frame_data.has_value()) {
                 return std::nullopt;
             }
-
             std::string json_str(frame_data->begin(), frame_data->end());
+            frame_data.reset();
             Json::Value root;
             std::string errs;
-
             Json::CharReaderBuilder builder;
             builder["collectComments"] = false;
             std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
@@ -51,7 +51,7 @@ namespace nanoipc {
                 throw std::runtime_error("failed to decode JSON: " + errs);
             }
 
-            return std::make_optional(root);
+            return std::make_optional(std::move(root));
         }
 
     private:

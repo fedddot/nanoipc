@@ -15,9 +15,8 @@ RUN adduser -D -u ${UID} -G developer -s /bin/bash developer
 ENV SHELL=bash
 
 ENV HOME=/home/developer
-COPY docker/shell_additions ${HOME}
-RUN echo "source ${HOME}/shell_additions" >> ${HOME}/.bashrc && \
-    chown -R developer:developer ${HOME}
+COPY --chown=${UID}:${GID} docker/shell_additions ${HOME}
+RUN echo "source ${HOME}/shell_additions" >> ${HOME}/.bashrc
 
 USER developer
 

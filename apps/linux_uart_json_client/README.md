@@ -2,7 +2,7 @@
 
 A command-line application that communicates with an embedded service over UART by sending and receiving JSON messages encoded with COBS framing.
 
-It opens the specified serial port, sends a JSON request (from a file or a built-in default), and prints the JSON response received from the device.
+It opens the specified serial port, sends a JSON request (read from a file), and writes the JSON response to the specified output file.
 
 ## Building
 
@@ -29,16 +29,20 @@ linux_uart_json_client [OPTIONS]
 | `--parity` | `NONE` | Parity: `NONE`, `EVEN`, `ODD`, `MARK`, `SPACE` |
 | `--data-bits` | `8` | Data bits: `5`, `6`, `7`, `8`, `16` |
 | `--stop-bits` | `1` | Stop bits: `1`, `1.5`, `2` |
-| `--request-file` | *(none)* | Path to a JSON file to send. Omit to send a built-in test request. |
+| `--request` | *(required)* | Path to a JSON file containing the request message |
+| `--response` | *(required)* | Path to write the received JSON response |
+| `--timeout` | `3` | Timeout in seconds to wait for a response |
 
 ### Example
 
 ```bash
-# Send a request from a file at 115200 baud
+# Send a request from a file at 115200 baud and save the response
 ./linux_uart_json_client \
     --port /dev/ttyUSB0 \
     --baud 115200 \
-    --request-file request.json
+    --request request.json \
+    --response response.json \
+    --timeout 5
 ```
 
 **Expected output:**
@@ -53,11 +57,6 @@ Received response: {
 }
 ```
 
-If `--request-file` is omitted the application sends a default test message:
+The response JSON is also written to the file specified by `--response`.
 
-```json
-{
-   "payload" : "Hello, world!",
-   "type" : "test_request"
-}
-```
+If the response is not received within the `--timeout` duration, the application prints an error and exits with a non-zero status code.

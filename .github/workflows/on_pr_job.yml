@@ -25,8 +25,8 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         build-args: |
-          UID=$(id -u)
-          GID=$(id -g)
+          UID=${{github.actor_id}}
+          GID=${{github.actor_id}}
         tags: nanoipcdev:latest
         file: ${{github.workspace}}/docker/dev.dockerfile
 

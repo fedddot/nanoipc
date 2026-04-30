@@ -22,9 +22,13 @@ jobs:
         submodules: recursive
 
     - name: build dev image
-      working-directory: ${{github.workspace}}
-      run: |
-        docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -f docker/dev.dockerfile -t nanoipcdev:latest .
+      uses: docker/build-push-action@v3
+      with:
+        build-args: |
+          UID=$(id -u)
+          GID=$(id -g)
+        tags: nanoipcdev:latest
+        file: ${{github.workspace}}/docker/dev.dockerfile
 
     - name: cmake config
       working-directory: ${{github.workspace}}

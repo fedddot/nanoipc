@@ -36,6 +36,7 @@ jobs:
           GID=${{steps.get_ids.outputs.runner_gid}}
         tags: nanoipcdev:latest
         file: ${{github.workspace}}/docker/dev.dockerfile
+        push: true
 
     - name: cmake config
       working-directory: ${{github.workspace}}

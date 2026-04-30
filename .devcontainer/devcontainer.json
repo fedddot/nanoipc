@@ -1,7 +1,11 @@
 {
     "build": {
         "dockerfile": "../docker/dev.dockerfile",
-        "context": ".."
+        "context": "..",
+        "args": {
+            "UID": "${localEnv:UID:1000}",
+            "GID": "${localEnv:GID:1000}"
+        }
     },
     "privileged": true,
     "customizations": {

@@ -23,7 +23,7 @@ jobs:
     - name: build dev image
       working-directory: ${{github.workspace}}
       run: |
-        docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g)-f docker/dev.dockerfile -t nanoipcdev:latest .
+        docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -f docker/dev.dockerfile -t nanoipcdev:latest .
 
     - name: cmake config
       working-directory: ${{github.workspace}}

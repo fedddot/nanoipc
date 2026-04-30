@@ -23,4 +23,4 @@ USER developer
 WORKDIR /usr/app/src
 
 
-ENTRYPOINT ["$SHELL"]
+ENTRYPOINT ["bash"]

@@ -12,7 +12,7 @@ ARG GID=1000
 RUN addgroup -g ${GID} developer
 RUN adduser -D -u ${UID} -G developer -s /bin/bash developer
 
-ENV SHELL=/bin/bash
+ENV SHELL=bash
 
 ENV HOME=/home/developer
 COPY --chown=${UID}:${GID} docker/shell_additions ${HOME}

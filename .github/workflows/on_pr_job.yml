@@ -9,6 +9,7 @@ env:
   BUILD_TYPE: Debug
   CONTAINER_SRC_DIR: /usr/app/src
   CONTAINER_BIN_DIR: /usr/app/bin
+  WORKSPACE_BIN_DIR: ${{github.workspace}}/bin
 
 jobs:
   build:
@@ -23,19 +24,20 @@ jobs:
     - name: build dev image
       working-directory: ${{github.workspace}}
       run: |
-        docker build -f docker/dev.dockerfile -t nanoipcdev:latest .
+        docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -f docker/dev.dockerfile -t nanoipcdev:latest .
 
     - name: cmake config
       working-directory: ${{github.workspace}}
       run: |
-        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{github.workspace}}/bin:${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DNANOIPC_TESTS=ON -DNANOIPC_LINUX_FEATURES=ON -S ${{env.CONTAINER_SRC_DIR}} -B ${{env.CONTAINER_BIN_DIR}}"
+        mkdir -p ${{env.WORKSPACE_BIN_DIR}}
+        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DNANOIPC_TESTS=ON -DNANOIPC_LINUX_FEATURES=ON -S ${{env.CONTAINER_SRC_DIR}} -B ${{env.CONTAINER_BIN_DIR}}"
     
     - name: build
       working-directory: ${{github.workspace}}
       run: |
-        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{github.workspace}}/bin:${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "cmake --build ${{env.CONTAINER_BIN_DIR}}"
+        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "cmake --build ${{env.CONTAINER_BIN_DIR}}"
 
     - name: run uts
       working-directory: ${{github.workspace}}
       run: |
-        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{github.workspace}}/bin:${{env.CONTAINER_BIN_DIR}} -w ${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "ctest --rerun-failed --output-on-failure"
+        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} -w ${{env.CONTAINER_BIN_DIR}} nanoipcdev:latest -c "ctest --rerun-failed --output-on-failure"

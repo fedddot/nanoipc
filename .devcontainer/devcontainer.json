@@ -1,7 +1,11 @@
 {
     "build": {
         "dockerfile": "../docker/dev.dockerfile",
-        "context": ".."
+        "context": "..",
+        "args": {
+            "UID": "${localEnv:UID:1000}",
+            "GID": "${localEnv:GID:1000}"
+        }
     },
     "privileged": true,
     "customizations": {
@@ -35,5 +39,8 @@
     },
     "workspaceFolder": "/usr/app/src",
     "workspaceMount": "source=${localWorkspaceFolder},target=/usr/app/src,type=bind",
-    "mounts": ["source=/dev,target=/dev,type=bind"]
+    "mounts": [
+        "source=/dev,target=/dev,type=bind",
+        "source=${localEnv:HOME}/.ssh,target=/home/developer/.ssh,type=bind"
+    ]
 }

@@ -30,7 +30,7 @@ TEST_F(VirtualUart, WriterSendsCobsEncodedFrame) {
 
     // Verify exact COBS encoding of {0x01}: [0x02, 0x01, 0x00]
     const std::vector<std::uint8_t> expected_raw{0x02, 0x01, 0x00};
-    EXPECT_EQ(raw, expected_raw);
+    ASSERT_EQ(raw, expected_raw);
 
     // Also verify that decoding recovers the original payload
     RingBuffer<64> buf;
@@ -38,7 +38,7 @@ TEST_F(VirtualUart, WriterSendsCobsEncodedFrame) {
     CobsFrameReader decoder(&buf);
     const auto decoded = decoder.read();
     ASSERT_TRUE(decoded.has_value());
-    EXPECT_EQ(decoded.value(), payload);
+    ASSERT_EQ(decoded.value(), payload);
 
     uart.closeDevice();
 }
@@ -63,7 +63,7 @@ TEST_F(VirtualUart, ReaderReceivesCobsFrame) {
         result = reader.read();
     }
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value(), payload);
+    ASSERT_EQ(result.value(), payload);
 
     uart.closeDevice();
 }
@@ -75,7 +75,7 @@ TEST_F(VirtualUart, ReaderReturnsNulloptWhenNoDataAvailable) {
     LinuxUartCobsFrameReader<256> reader(&uart);
 
     const auto result = reader.read();
-    EXPECT_FALSE(result.has_value());
+    ASSERT_FALSE(result.has_value());
 
     uart.closeDevice();
 }
@@ -93,7 +93,7 @@ TEST_F(VirtualUart, ReaderHandlesFragmentedFrame) {
     // the ring buffer; then verify that no complete frame is returned yet.
     ::usleep(50'000);
     const auto partial = reader.read();
-    EXPECT_FALSE(partial.has_value());
+    ASSERT_FALSE(partial.has_value());
 
     // Send the remainder including the COBS delimiter
     write_data({0x03, 0x00});
@@ -104,7 +104,7 @@ TEST_F(VirtualUart, ReaderHandlesFragmentedFrame) {
         result = reader.read();
     }
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value(), payload);
+    ASSERT_EQ(result.value(), payload);
 
     uart.closeDevice();
 }

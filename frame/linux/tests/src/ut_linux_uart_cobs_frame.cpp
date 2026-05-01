@@ -10,7 +10,6 @@
 #include "linux_uart_cobs_frame_reader.hpp"
 #include "linux_uart_cobs_frame_writer.hpp"
 #include "cobs_frame_reader.hpp"
-#include "cobs_frame_writer.hpp"
 #include "ring_buffer.hpp"
 #include "serialib.h"
 

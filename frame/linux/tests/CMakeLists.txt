@@ -6,9 +6,13 @@ add_executable(
 target_link_libraries(
     linux_uart_frame_tests
     PRIVATE
-    virtual_uart
+    cobs_frame_reader
     linux_uart_cobs_frame_reader
     linux_uart_cobs_frame_writer
+    virtual_uart
+
+    gtest
+    gtest_main
 )
 
 add_test(NAME linux_uart_frame_tests COMMAND linux_uart_frame_tests)

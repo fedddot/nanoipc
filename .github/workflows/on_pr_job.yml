@@ -46,7 +46,7 @@ jobs:
     - name: build
       working-directory: ${{github.workspace}}
       run: |
-        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} ${{steps.build_dev_image.outputs.imageid}} -c "cmake --build ${{env.CONTAINER_BIN_DIR}}"
+        docker run -i -v ${{github.workspace}}:${{env.CONTAINER_SRC_DIR}} -v ${{env.WORKSPACE_BIN_DIR}}:${{env.CONTAINER_BIN_DIR}} ${{steps.build_dev_image.outputs.imageid}} -c "cmake --build ${{env.CONTAINER_BIN_DIR}} -j $(nproc)"
 
     - name: run uts
       working-directory: ${{github.workspace}}

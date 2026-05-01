@@ -66,7 +66,7 @@ TEST_F(VirtualUart, SendsRequestAndReceivesResponse) {
     CobsFrameReader decoder(&decode_buf);
     const auto decoded_request = decoder.read();
     ASSERT_TRUE(decoded_request.has_value()) << "Failed to decode COBS frame from app";
-    EXPECT_EQ(decoded_request.value(), request_payload);
+    ASSERT_EQ(decoded_request.value(), request_payload);
 
     // Encode the response payload and send it to the app.
     std::vector<std::uint8_t> encoded_response;
@@ -87,7 +87,7 @@ TEST_F(VirtualUart, SendsRequestAndReceivesResponse) {
         (std::istreambuf_iterator<char>(rsp_in)),
         std::istreambuf_iterator<char>()
     );
-    EXPECT_EQ(rsp_contents, response_payload);
+    ASSERT_EQ(rsp_contents, response_payload);
 
     ::unlink(req_file.c_str());
     ::unlink(rsp_file.c_str());

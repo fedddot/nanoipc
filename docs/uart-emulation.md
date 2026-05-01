@@ -99,75 +99,174 @@ containers.
 
 ## How to Use It
 
-### Unit tests (`frame/linux`)
+### Shared fixture: `VirtualUart`
 
-A minimal test fixture pattern. `openpty` is in `<pty.h>` on both musl and glibc; on
-glibc-based systems (Ubuntu/Debian) link with `-lutil`.
+All tests — both unit and integration — use a single GoogleTest fixture defined in
+`virtual_uart.hpp`. The header is delivered as a CMake **INTERFACE** target named
+`virtual_uart` so any test executable can depend on it without adding source files to its
+own target.
 
-```cpp
-#include <pty.h>       // openpty
-#include <unistd.h>
-#include <string>
-#include <stdexcept>
-
-struct PtyPair {
-    int master_fd{-1};
-    int slave_fd{-1};
-    std::string slave_path;
-
-    PtyPair() {
-        char name[64]{};
-        // Pass nullptr for termios/winsize — serialib reconfigures them on openDevice().
-        if (openpty(&master_fd, &slave_fd, name, nullptr, nullptr) != 0) {
-            throw std::runtime_error("openpty failed");
-        }
-        slave_path = name;
-    }
-    ~PtyPair() {
-        if (slave_fd  >= 0) { close(slave_fd);  }
-        if (master_fd >= 0) { close(master_fd); }
-    }
-    PtyPair(const PtyPair&) = delete;
-    PtyPair& operator=(const PtyPair&) = delete;
-};
+```
+testing/
+  virtual_uart/
+    CMakeLists.txt          # INTERFACE target
+    include/
+      virtual_uart.hpp      # fixture definition
 ```
 
-The test then:
-1. Constructs a `PtyPair`.
-2. Opens `slave_path` with `serialib` (or passes it to the class under test).
-3. Writes raw bytes to `master_fd` to simulate incoming UART data.
-4. Reads bytes from `master_fd` to verify what the class sent.
+The fixture manages the PTY pair lifecycle and exposes raw byte I/O on the master side:
+
+```cpp
+#ifndef VIRTUAL_UART_HPP
+#define VIRTUAL_UART_HPP
+
+#include <pty.h>
+#include <unistd.h>
+#include <cstdint>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include <gtest/gtest.h>
+
+class VirtualUart : public ::testing::Test {
+public:
+    // Returns the slave device path (e.g. /dev/pts/N).
+    // Pass this to serialib::openDevice() or as --port to the app under test.
+    const std::string& slave_path() const { return m_slave_path; }
+
+    // Write raw bytes to the master side of the PTY
+    // (simulates data arriving from the remote device).
+    void write_data(const std::vector<std::uint8_t>& data) {
+        const auto written = ::write(m_master_fd, data.data(), data.size());
+        if (written < 0 || static_cast<std::size_t>(written) != data.size()) {
+            throw std::runtime_error("write_data: write failed");
+        }
+    }
+
+    // Read exactly n raw bytes from the master side of the PTY
+    // (bytes that the code under test / app sent to the slave).
+    std::vector<std::uint8_t> read_data(std::size_t n) {
+        std::vector<std::uint8_t> buf(n);
+        std::size_t total = 0;
+        while (total < n) {
+            const auto got = ::read(m_master_fd, buf.data() + total, n - total);
+            if (got <= 0) { throw std::runtime_error("read_data: read failed"); }
+            total += static_cast<std::size_t>(got);
+        }
+        return buf;
+    }
+
+protected:
+    void SetUp() override {
+        char name[64]{};
+        // Pass nullptr for termios/winsize — serialib reconfigures them on openDevice().
+        if (openpty(&m_master_fd, &m_slave_fd, name, nullptr, nullptr) != 0) {
+            throw std::runtime_error("SetUp: openpty failed");
+        }
+        m_slave_path = name;
+    }
+
+    void TearDown() override {
+        if (m_slave_fd  >= 0) { ::close(m_slave_fd);  m_slave_fd  = -1; }
+        if (m_master_fd >= 0) { ::close(m_master_fd); m_master_fd = -1; }
+    }
+
+private:
+    int m_master_fd{-1};
+    int m_slave_fd{-1};
+    std::string m_slave_path;
+};
+
+#endif // VIRTUAL_UART_HPP
+```
+
+CMake INTERFACE target (no sources — the fixture is header-only):
+
+```cmake
+# testing/virtual_uart/CMakeLists.txt
+add_library(virtual_uart INTERFACE)
+target_include_directories(virtual_uart INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_link_libraries(virtual_uart INTERFACE gtest gtest_main)
+```
+
+`openpty` is in `<pty.h>` on both musl (Alpine) and glibc; on glibc-based systems
+(Ubuntu/Debian) link the test executable with `-lutil`.
+
+---
+
+### Unit tests (`frame/linux`)
+
+Each test case inherits the PTY pair from `VirtualUart` via `TEST_F`. The test opens the
+slave device with `serialib`, exercises `LinuxUartCobsFrameReader` /
+`LinuxUartCobsFrameWriter`, and uses `write_data()` / `read_data()` to drive the master
+side:
+
+```cmake
+# frame/linux/tests/CMakeLists.txt
+add_executable(linux_uart_frame_tests
+    src/ut_linux_uart_cobs_frame.cpp
+)
+target_link_libraries(linux_uart_frame_tests
+    PRIVATE
+    virtual_uart
+    linux_uart_cobs_frame_reader
+    linux_uart_cobs_frame_writer
+)
+add_test(NAME linux_uart_frame_tests COMMAND linux_uart_frame_tests)
+```
+
+```cpp
+// ut_linux_uart_cobs_frame.cpp
+#include "virtual_uart.hpp"
+#include "linux_uart_cobs_frame_reader.hpp"
+#include "linux_uart_cobs_frame_writer.hpp"
+#include "serialib.h"
+
+TEST_F(VirtualUart, WriterSendsCobsFrame) {
+    serialib uart;
+    ASSERT_EQ(uart.openDevice(slave_path().c_str(), 9600), 1);
+
+    nanoipc::LinuxUartCobsFrameWriter writer(&uart);
+    writer.write({0x01, 0x02, 0x03});
+
+    // read_data receives raw COBS bytes from the master side
+    const auto raw = read_data(5); // 5 = COBS-encoded length of {01 02 03}
+    // assert expected COBS encoding ...
+    uart.closeDevice();
+}
+```
+
+---
 
 ### Integration tests (`apps/`)
 
-Integration tests exercise the full app binary end-to-end. The test CMakeLists.txt builds
-the real application, and each test:
-
-1. Creates a PTY pair.
-2. Spawns the app binary as a subprocess, pointing `--port` at the slave device path.
-3. Acts as the **device side** on the master fd — reads the COBS-framed request the app
-   sends and writes back a COBS-framed response.
-4. Waits for the subprocess to exit, then asserts the exit code and the response file
-   content.
+Integration tests spawn the real app binary as a subprocess and use the `VirtualUart`
+fixture to act as the **device side** on the master fd.
 
 #### CMake structure
 
-The integration-test CMakeLists.txt lives alongside (or under) the app it tests. It
-explicitly builds the app target so that a plain `cmake --build` / `ctest` invocation is
-self-contained:
+The app target is already defined by the parent CMakeLists.txt (via
+`apps/CMakeLists.txt`). The integration-test CMakeLists.txt creates its own executable and
+uses `add_dependencies` to guarantee the app binary is built before the tests run — no
+`add_subdirectory` of the app is needed:
 
 ```cmake
 # apps/linux_uart_cobs_client/tests/CMakeLists.txt
-
-# Build the application under test as part of this target tree.
-add_subdirectory(.. linux_uart_cobs_client_build)
-
 add_executable(linux_uart_cobs_client_it
     src/it_linux_uart_cobs_client.cpp
 )
-target_link_libraries(linux_uart_cobs_client_it PRIVATE gtest gtest_main)
+target_link_libraries(linux_uart_cobs_client_it
+    PRIVATE
+    virtual_uart
+    cobs_frame_reader
+    cobs_frame_writer
+)
 
-# Inject the path to the built binary at compile time so tests can exec() it.
+# Ensure the app binary is built before the test runs.
+add_dependencies(linux_uart_cobs_client_it linux_uart_cobs_client)
+
+# Inject the path to the built binary at compile time.
 target_compile_definitions(linux_uart_cobs_client_it PRIVATE
     APP_BINARY="$<TARGET_FILE:linux_uart_cobs_client>"
 )
@@ -175,95 +274,81 @@ target_compile_definitions(linux_uart_cobs_client_it PRIVATE
 add_test(NAME linux_uart_cobs_client_it COMMAND linux_uart_cobs_client_it)
 ```
 
-#### Test fixture
+#### Test body
 
-The fixture owns the PTY pair and the subprocess lifetime:
+Each test case uses `TEST_F(VirtualUart, ...)`. The fixture provides `slave_path()`,
+`write_data()`, and `read_data()`; the test body is responsible for spawning the
+subprocess and coordinating the exchange:
 
 ```cpp
-#include <pty.h>
-#include <unistd.h>
+// it_linux_uart_cobs_client.cpp
 #include <sys/wait.h>
-#include <string>
-#include <vector>
-#include <stdexcept>
+#include <unistd.h>
+#include "virtual_uart.hpp"
+// COBS helpers reused from the library under test
+#include "cobs_frame_reader.hpp"
+#include "cobs_frame_writer.hpp"
 
-struct AppUnderTest {
-    int  master_fd{-1};
-    int  slave_fd{-1};
-    pid_t pid{-1};
-    std::string slave_path;
+TEST_F(VirtualUart, SendsRequestAndReceivesResponse) {
+    // --- prepare test data ---
+    const std::vector<std::uint8_t> request_payload  = {0xDE, 0xAD, 0xBE, 0xEF};
+    const std::vector<std::uint8_t> response_payload = {0xCA, 0xFE};
+    // write request binary to a temp file
+    const std::string req_file = "/tmp/cobs_it_request.bin";
+    const std::string rsp_file = "/tmp/cobs_it_response.bin";
+    // ... write request_payload to req_file ...
 
-    // Open the PTY pair.  slave_fd is kept open so the PTY stays alive
-    // even before the subprocess opens it.
-    AppUnderTest() {
-        char name[64]{};
-        if (openpty(&master_fd, &slave_fd, name, nullptr, nullptr) != 0) {
-            throw std::runtime_error("openpty failed");
-        }
-        slave_path = name;
+    // --- spawn the application ---
+    const pid_t pid = fork();
+    ASSERT_GE(pid, 0);
+    if (pid == 0) {
+        // child: exec the app pointing at the slave PTY
+        execl(APP_BINARY, APP_BINARY,
+              "--port",     slave_path().c_str(),
+              "--baud",     "9600",
+              "--request",  req_file.c_str(),
+              "--response", rsp_file.c_str(),
+              nullptr);
+        _exit(127);
     }
 
-    // Spawn the application binary, handing it the slave path as --port.
-    void launch(const std::vector<std::string>& extra_args) {
-        pid = fork();
-        if (pid < 0) { throw std::runtime_error("fork failed"); }
-        if (pid == 0) {
-            // Child: close the master fd — it belongs to the test process.
-            close(master_fd);
-            std::vector<const char*> argv = { APP_BINARY, "--port", slave_path.c_str() };
-            for (const auto& a : extra_args) { argv.push_back(a.c_str()); }
-            argv.push_back(nullptr);
-            execv(APP_BINARY, const_cast<char* const*>(argv.data()));
-            _exit(127); // execv failed
-        }
-        // Parent: close slave_fd — the child (serialib) now owns it.
-        close(slave_fd);
-        slave_fd = -1;
-    }
+    // --- act as the device on the master side ---
+    // Read the COBS frame the app sent, then write back a COBS response.
+    // write_data / read_data provide raw byte access to the master fd.
+    // Use CobsFrameWriter / CobsFrameReader (linked via CMake) for framing.
+    // ... decode incoming frame, verify it matches request_payload ...
+    // ... encode response_payload as COBS and call write_data() ...
 
-    // Wait for the subprocess to exit and return its exit code.
-    int wait() {
-        int status{};
-        waitpid(pid, &status, 0);
-        pid = -1;
-        return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-    }
+    // --- wait for the app to exit ---
+    int status{};
+    waitpid(pid, &status, 0);
+    ASSERT_TRUE(WIFEXITED(status));
+    ASSERT_EQ(WEXITSTATUS(status), 0);
 
-    ~AppUnderTest() {
-        if (pid  > 0)  { kill(pid, SIGTERM); wait(); }
-        if (slave_fd  >= 0) { close(slave_fd);  }
-        if (master_fd >= 0) { close(master_fd); }
-    }
-    AppUnderTest(const AppUnderTest&) = delete;
-    AppUnderTest& operator=(const AppUnderTest&) = delete;
-};
+    // --- assert response file content ---
+    // ... read rsp_file, compare with response_payload ...
+}
 ```
-
-#### COBS framing on the master (device-simulator) side
-
-The test must speak the same COBS protocol the app uses. The existing
-`CobsFrameReader` and `CobsFrameWriter` classes can be reused in the test binary by
-linking against `cobs_frame_reader` and `cobs_frame_writer` CMake targets. The test wraps
-`master_fd` in thin `read`/`write` helpers that satisfy the `Reader` / `Writer` interfaces.
 
 #### Interaction flow
 
 ```
-Test process                        App subprocess
-─────────────────────────────────   ──────────────────────────────────
-Create PTY pair
-Write request file (binary/JSON)
-launch(--request=..., --response=..)  ─spawn──► openDevice(slave_path)
-                                                 flushReceiver()
-                                                 cobs_writer.write(request)
-master_fd: read COBS frame ◄──────── slave: bytes sent
-master_fd: write COBS response ─────► slave: bytes received
-                                                 cobs_reader.read() → payload
-                                                 write response file
-                                                 closeDevice() → exit 0
-int rc = wait()
-ASSERT_EQ(rc, 0)
-Read response file, assert content
+Test process (VirtualUart fixture)      App subprocess
+────────────────────────────────────    ─────────────────────────────────
+SetUp(): openpty → slave_path()
+fork() → spawn app with
+  --port slave_path()
+  --request req_file
+  --response rsp_file             ─────► openDevice(slave_path())
+                                          flushReceiver()
+                                          cobs_writer.write(request)
+read_data() → decode COBS frame  ◄──────  slave: COBS bytes sent
+write_data(COBS-encoded response) ──────► slave: COBS bytes received
+                                          cobs_reader.read() → payload
+                                          write rsp_file → exit 0
+waitpid() → assert exit code 0
+read rsp_file → assert content
+TearDown(): close PTY fds
 ```
 
 ### Dev container (`docker/dev.dockerfile`)

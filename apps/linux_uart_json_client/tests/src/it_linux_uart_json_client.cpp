@@ -1,3 +1,5 @@
+#include "json/reader.h"
+#include "json/writer.h"
 #include <fstream>
 #include <string>
 #include <thread>
@@ -10,8 +12,6 @@
 #include "virtual_uart.hpp"
 #include "cobs_frame_reader.hpp"
 #include "cobs_frame_writer.hpp"
-#include "json_message_reader.hpp"
-#include "json_message_writer.hpp"
 #include "ring_buffer.hpp"
 #include "json/value.h"
 

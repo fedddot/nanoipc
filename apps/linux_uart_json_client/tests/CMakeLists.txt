@@ -15,8 +15,6 @@ target_link_libraries(
     virtual_uart
     cobs_frame_reader
     cobs_frame_writer
-    json_message_reader
-    json_message_writer
     ring_buffer
     jsoncpp_static
     gtest

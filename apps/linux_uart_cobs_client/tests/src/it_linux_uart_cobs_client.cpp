@@ -12,7 +12,12 @@
 #include "cobs_frame_writer.hpp"
 #include "ring_buffer.hpp"
 
+#ifndef APP_BINARY
+#  error "APP_BINARY must be defined to the path of the app under test"
+#endif
+
 using namespace nanoipc;
+using namespace nanoipc_testing;
 
 TEST_F(VirtualUart, SendsRequestAndReceivesResponse) {
     const std::vector<std::uint8_t> request_payload  = {0xDE, 0xAD, 0xBE, 0xEF};

@@ -26,7 +26,7 @@ TEST_F(VirtualUart, WriterSendsCobsEncodedFrame) {
     const std::vector<std::uint8_t> payload{0x01};
     ASSERT_NO_THROW(writer.write(payload));
 
-    const auto raw = read_cobs_frame_bytes();
+    const auto raw = read_until_byte(0x00);
 
     // Verify exact COBS encoding of {0x01}: [0x02, 0x01, 0x00]
     const std::vector<std::uint8_t> expected_raw{0x02, 0x01, 0x00};

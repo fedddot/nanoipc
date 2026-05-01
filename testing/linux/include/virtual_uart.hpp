@@ -1,6 +1,7 @@
 #ifndef VIRTUAL_UART_HPP
 #define VIRTUAL_UART_HPP
 
+#include <chrono>
 #include <fcntl.h>
 #include <poll.h>
 #include <pty.h>
@@ -18,7 +19,7 @@ namespace nanoipc_testing {
     ///
     /// Opens a master/slave PTY pair in SetUp(). Tests pass slave_path() to
     /// serialib::openDevice() (or as --port to an app under test) and use
-    /// write_data() / read_data() / read_cobs_frame_bytes() to drive the master side.
+    /// write_data() / read_data() / read_until_byte() to drive the master side.
     class VirtualUart : public ::testing::Test {
     public:
         /// @brief Returns the slave device path (e.g. /dev/pts/N).
@@ -48,19 +49,46 @@ namespace nanoipc_testing {
             return buf;
         }
 
-        /// @brief Reads raw bytes from the master until the COBS frame delimiter (0x00, inclusive).
-        std::vector<std::uint8_t> read_cobs_frame_bytes(int timeout_ms = 2000) {
+        /// @brief Reads raw bytes from the master until a delimiter byte is encountered (inclusive).
+        ///
+        /// This is a generic delimiter-based read utility for framing protocols that use byte delimiters
+        /// (e.g., COBS frames ending with 0x00, or any similar delimiter-based protocol).
+        /// The returned vector includes the delimiter byte at the end.
+        ///
+        /// @param delimiter_byte The byte value to read until
+        /// @param timeout_ms Total timeout in milliseconds
+        /// @param max_bytes Maximum bytes to accumulate before failing (prevents unbounded growth)
+        /// @throws std::runtime_error if timeout expires, read fails, or max_bytes is exceeded
+        std::vector<std::uint8_t> read_until_byte(std::uint8_t delimiter_byte, int timeout_ms = 2000, std::size_t max_bytes = 65536) {
             std::vector<std::uint8_t> result;
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
+
             while (true) {
-                struct pollfd pfd{m_master_fd, POLLIN, 0};
-                if (::poll(&pfd, 1, timeout_ms) <= 0) {
-                    throw std::runtime_error("read_cobs_frame_bytes: timeout or poll error");
+                const auto now = std::chrono::steady_clock::now();
+                if (now >= deadline) {
+                    throw std::runtime_error("read_until_byte: timeout");
                 }
+
+                const auto remaining_ms = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count();
+                struct pollfd pfd{m_master_fd, POLLIN, 0};
+                if (::poll(&pfd, 1, static_cast<int>(remaining_ms)) <= 0) {
+                    throw std::runtime_error("read_until_byte: timeout or poll error");
+                }
+
                 std::uint8_t byte{};
                 const auto got = ::read(m_master_fd, &byte, 1);
-                if (got <= 0) { throw std::runtime_error("read_cobs_frame_bytes: read failed"); }
+                if (got <= 0) {
+                    throw std::runtime_error("read_until_byte: read failed");
+                }
+
                 result.push_back(byte);
-                if (byte == 0x00) { break; }
+                if (result.size() > max_bytes) {
+                    throw std::runtime_error("read_until_byte: max_bytes exceeded");
+                }
+
+                if (byte == delimiter_byte) {
+                    break;
+                }
             }
             return result;
         }

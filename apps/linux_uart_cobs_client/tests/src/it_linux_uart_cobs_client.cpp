@@ -50,7 +50,7 @@ TEST_F(VirtualUart, SendsRequestAndReceivesResponse) {
     std::vector<std::uint8_t> raw_frame;
     bool read_ok = false;
     try {
-        raw_frame = read_cobs_frame_bytes(5000);
+        raw_frame = read_until_byte(0x00, 5000);
         read_ok = true;
     } catch (...) {}
 

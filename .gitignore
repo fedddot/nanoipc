@@ -17,4 +17,4 @@ build
 !*.yml
 !*.py
 !*.proto
-!*.mdbuild-tests
+!*.md

@@ -14,6 +14,7 @@ target_include_directories(writer INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 
 include(FetchContent)
 
+option(NANOIPC_LINUX_FEATURES "Build with Linux-specific features" ON)
 option(NANOIPC_TESTS "Build the project's test suite" ON)
 if(NANOIPC_TESTS)
     FetchContent_Declare(
@@ -25,8 +26,6 @@ if(NANOIPC_TESTS)
     enable_testing()
     add_subdirectory(testing)
 endif()
-
-option(NANOIPC_LINUX_FEATURES "Build with Linux-specific features" ON)
 
 add_subdirectory(apps)
 add_subdirectory(frame)

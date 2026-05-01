@@ -30,3 +30,7 @@ target_link_libraries(
     cobs_frame_writer
     serialib_interface
 )
+
+if(NANOIPC_TESTS)
+    add_subdirectory(tests)
+endif()

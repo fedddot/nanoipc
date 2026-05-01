@@ -23,6 +23,7 @@ if(NANOIPC_TESTS)
     )
     FetchContent_MakeAvailable(googletest)
     enable_testing()
+    add_subdirectory(testing/virtual_uart)
 endif()
 
 option(NANOIPC_LINUX_FEATURES "Build with Linux-specific features" ON)

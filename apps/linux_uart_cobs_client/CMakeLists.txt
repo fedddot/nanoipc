@@ -14,3 +14,7 @@ target_link_libraries(
     linux_uart_cobs_frame_writer
     serialib_interface
 )
+
+if(NANOIPC_TESTS)
+    add_subdirectory(tests)
+endif()

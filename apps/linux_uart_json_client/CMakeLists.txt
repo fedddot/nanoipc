@@ -16,3 +16,7 @@ target_link_libraries(
     json_message_writer
     serialib_interface
 )
+
+if(NANOIPC_TESTS)
+    add_subdirectory(tests)
+endif()

@@ -14,6 +14,7 @@
 #include "serialib.h"
 
 using namespace nanoipc;
+using namespace nanoipc_testing;
 
 // COBS encoding of {0x01}: [0x02, 0x01, 0x00]
 // code=0x02 means 2 octets until next delimiter (i.e. one data byte), then 0x01, then 0x00 delimiter.
